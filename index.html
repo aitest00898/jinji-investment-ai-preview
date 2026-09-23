@@ -283,276 +283,394 @@ body{height:100dvh;padding:12px}
 @media(max-width:1000px){#jinji-canvas .j-allocation-grid{grid-template-columns:1fr}#jinji-canvas .j-allocation-card{max-width:620px;width:100%}}
 @media(max-width:650px){#jinji-canvas .j-nav{gap:0}#jinji-canvas .j-allocation-main strong{font-size:48px}}
 </style>
-<div id="jinji-canvas" aria-label="金雞投資查詢與 PWA 介面提案">
+<style>
+/* Shared context, result-first portfolio and contextual investigation. */
+#jinji-canvas .p-data-status{font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:7px;min-height:44px;padding:6px 0}
+#jinji-canvas .p-data-status i{width:6px;height:6px;background:var(--j-accent);border-radius:50%}
+#jinji-canvas .p-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+#jinji-canvas .p-head h2{margin:0;font-size:30px;font-weight:500;letter-spacing:-.045em}
+#jinji-canvas .p-context{position:sticky;top:-26px;z-index:2;background:var(--j-paper);padding-top:2px;padding-bottom:10px;border-bottom:1px solid var(--j-rule)}
+#jinji-canvas .p-context .p-head{margin-bottom:6px}
+#jinji-canvas .p-filters{display:flex;gap:8px;flex-wrap:wrap}
+#jinji-canvas .p-filters button{padding:8px 10px;font-size:13px;min-height:44px}
+#jinji-canvas .p-rail{display:flex;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scrollbar-width:none;scroll-behavior:smooth;padding:4px 0 8px}
+#jinji-canvas .p-rail::-webkit-scrollbar{display:none}
+#jinji-canvas .p-rail button{flex-shrink:0;min-width:48px;padding:8px 14px;text-align:center;border:1px solid var(--j-rule);border-radius:3px;font-size:14px}
+#jinji-canvas .p-rail button[aria-pressed=true]{background:var(--j-ink);color:var(--j-paper);border-color:var(--j-ink)}
+#jinji-canvas .p-view-switch{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#jinji-canvas .p-view-switch .j-segments{margin:0;background:transparent;padding:0;gap:18px}
+#jinji-canvas .p-view-switch .j-segments button{border-bottom:2px solid transparent;border-radius:0;padding:8px 4px;font-size:19px}
+#jinji-canvas .p-view-switch .j-segments button[aria-pressed=true]{background:none;box-shadow:none;border-color:var(--j-accent)}
+#jinji-canvas .p-view-switch>.j-caption{text-align:right}
+#jinji-canvas .p-result{padding-top:26px}
+#jinji-canvas .p-result-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#jinji-canvas .p-basis{display:flex;gap:12px;flex-wrap:wrap}
+#jinji-canvas .p-basis button{padding:5px 0;min-height:44px;font-size:13px;color:var(--j-muted);border-bottom:1px solid transparent}
+#jinji-canvas .p-basis button[aria-pressed=true]{color:var(--j-ink);border-color:var(--j-ink)}
+#jinji-canvas .p-lens-trigger{font-size:12px;min-height:44px;color:var(--j-accent);white-space:nowrap;padding:8px 0}
+#jinji-canvas .p-amount{font-size:clamp(40px,5.8vw,70px);font-weight:400;letter-spacing:-.055em;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;margin:12px 0}
+#jinji-canvas .p-amount small{font-size:12px;letter-spacing:0;color:var(--j-muted);margin-left:10px;white-space:nowrap}
+#jinji-canvas [data-lens]{-webkit-touch-callout:none;user-select:none}
+#jinji-canvas .p-metrics{display:flex;gap:26px;margin:20px 0;flex-wrap:wrap}
+#jinji-canvas .p-metrics b{font-size:22px;font-weight:400;display:block;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-metrics span{font-size:12px;color:var(--j-muted)}
+#jinji-canvas .p-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:46px;align-items:start}
+#jinji-canvas .p-sticky-result{position:sticky;top:162px;min-width:0}
+#jinji-canvas .p-ledger{min-width:0;padding-top:24px}
+#jinji-canvas .p-ledger h3{font-size:15px;font-weight:500;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--j-rule);padding-bottom:12px;margin:22px 0 0}
+#jinji-canvas .p-ledger h3:first-child{margin-top:0}
+#jinji-canvas .p-ledger h3 span{color:var(--j-muted);font-size:12px}
+#jinji-canvas .p-record{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;width:100%;border-bottom:1px solid var(--j-rule);padding:16px 0;text-align:left}
+#jinji-canvas .p-record>small{color:var(--j-muted);font-size:12px}
+#jinji-canvas .p-record strong{font-size:16px;font-weight:500}
+#jinji-canvas .p-record span small{display:block;font-size:11px;color:var(--j-muted)}
+#jinji-canvas .p-record b{font-size:19px;font-weight:400;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-empty{padding:32px 0;color:var(--j-muted)}
+#jinji-canvas .p-context-issue{padding:8px 0;font-size:12px;color:var(--j-accent);width:100%;text-align:left}
+#jinji-canvas .p-overview-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:60px;margin-top:32px}
+#jinji-canvas .p-overview-side{border-left:1px solid var(--j-rule);padding-left:32px}
+#jinji-canvas .p-overview-side button{padding:16px 0;width:100%;border-bottom:1px solid var(--j-rule)}
+#jinji-canvas .p-overview-side strong{display:block;font-size:28px;font-weight:400;margin-top:5px;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-overview-footer{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:36px}
+#jinji-canvas .p-share-table{margin-top:16px;width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-share-table th{font-size:11px;color:var(--j-muted);font-weight:400;padding:12px 0;text-align:right}
+#jinji-canvas .p-share-table th:first-child,#jinji-canvas .p-share-table td:first-child{text-align:left}
+#jinji-canvas .p-share-table td{padding:14px 0;border-top:1px solid var(--j-rule);text-align:right;font-size:18px}
+#jinji-canvas .p-share-table small{display:block;font-size:11px;color:var(--j-muted)}
+#jinji-canvas .p-share-table tr[data-selected=true]{background:var(--j-tint)}
+#jinji-canvas .p-config-list{margin-top:22px}
+#jinji-canvas .p-config-row{display:grid;grid-template-columns:minmax(95px,1fr) 1fr 1fr;align-items:center;gap:12px;width:100%;padding:18px 0;border-bottom:1px solid var(--j-rule);font-variant-numeric:tabular-nums}
+#jinji-canvas .p-config-row strong{font-weight:500;font-size:19px}
+#jinji-canvas .p-config-row small{display:block;font-size:11px;color:var(--j-muted);font-weight:400}
+#jinji-canvas .p-config-row>span:not(:first-child){text-align:right;font-size:23px}
+#jinji-canvas .p-timeline{margin:26px 0;border-top:1px solid var(--j-rule);padding-top:16px}
+#jinji-canvas .p-timeline-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;gap:12px}
+#jinji-canvas .p-timeline-dates{display:flex;justify-content:space-between;font-size:11px;color:var(--j-muted)}
+#jinji-canvas .p-timeline input{width:100%;min-height:44px;accent-color:var(--j-accent);cursor:ew-resize;touch-action:pan-y;margin:4px 0}
+#jinji-canvas .p-timeline-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+#jinji-canvas .p-timeline-actions button{font-size:12px;padding:8px 0}
+#jinji-canvas .p-timeline-actions span{font-size:11px;color:var(--j-muted)}
+#jinji-canvas .p-config-detail{padding-top:24px}
+#jinji-canvas .p-config-number{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 0 12px}
+#jinji-canvas .p-config-number strong{font-size:66px;font-weight:400;letter-spacing:-.055em;line-height:1}
+#jinji-canvas .p-config-number span{font-size:13px;color:var(--j-muted)}
+#jinji-canvas .p-version-badge{font-size:11px;color:var(--j-accent);letter-spacing:.05em}
+#jinji-canvas .p-sheet-tabs{display:flex;gap:18px;margin-bottom:18px;position:sticky;top:-24px;background:var(--j-sheet);z-index:1}
+#jinji-canvas .p-sheet-tabs button{font-size:14px;padding:8px 0;border-bottom:2px solid transparent}
+#jinji-canvas .p-sheet-tabs button[aria-pressed=true]{border-color:var(--j-accent)}
+#jinji-canvas .p-money-list{margin:16px 0}
+#jinji-canvas .p-money-list>div{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:12px 0;border-bottom:1px solid var(--j-rule)}
+#jinji-canvas .p-money-list dt{font-size:13px;color:var(--j-muted)}
+#jinji-canvas .p-money-list dd{margin:0;text-align:right;font-size:18px;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-money-list .p-net{padding:14px 10px;background:var(--j-tint);border-top:1px solid var(--j-ink)}
+#jinji-canvas .p-sheet-total{font-size:38px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin:14px 0}
+#jinji-canvas .p-op-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:42px;row-gap:12px;margin-top:18px}
+#jinji-canvas .p-op-card{border-top:1px solid var(--j-rule);padding:18px 0;width:100%;text-align:left}
+#jinji-canvas .p-op-card h3{font-size:20px;margin:0;font-weight:500}
+#jinji-canvas .p-op-values{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0 12px}
+#jinji-canvas .p-op-values strong{font-size:32px;font-weight:400;letter-spacing:-.03em;display:block;font-variant-numeric:tabular-nums}
+#jinji-canvas .p-op-values small{font-size:11px;color:var(--j-muted);display:block}
+#jinji-canvas .p-completeness{height:3px;background:var(--j-rule);margin:10px 0}
+#jinji-canvas .p-completeness span{display:block;height:100%;background:var(--j-ink)}
+#jinji-canvas .p-lens-context{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+#jinji-canvas .p-lens-context span{font-size:11px;padding:4px 7px;background:var(--j-tint);border-radius:2px}
+#jinji-canvas .p-lens-questions{display:grid;gap:0;margin:16px 0}
+#jinji-canvas .p-lens-questions button{border-bottom:1px solid var(--j-rule);padding:14px 0;font-size:15px;display:flex;justify-content:space-between}
+#jinji-canvas .p-lens-answer{font-size:17px;line-height:1.85;margin:20px 0}
+#jinji-canvas .p-issue{padding:18px 0;border-bottom:1px solid var(--j-rule);width:100%;display:flex;justify-content:space-between;gap:18px}
+#jinji-canvas .p-issue strong{font-size:16px;font-weight:500;display:block}
+#jinji-canvas .p-issue small{color:var(--j-muted);font-size:12px;display:block;margin-top:6px}
+#jinji-canvas .p-source-fields>div{padding:14px 0;border-bottom:1px solid var(--j-rule)}
+#jinji-canvas .p-source-fields b{font-weight:500;display:block}
+#jinji-canvas .p-source-fields span{font-size:13px;color:var(--j-muted);display:block;margin-top:5px}
+#jinji-canvas .p-live{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#jinji-canvas .j-main:has(.j-sheet[open]){overflow-y:auto}
+#jinji-canvas .j-app:has(~ .j-sheet[open]) .j-main{overflow-y:hidden}
+@media(max-width:1000px){#jinji-canvas .p-columns{grid-template-columns:1fr;gap:10px}#jinji-canvas .p-sticky-result{position:static}#jinji-canvas .p-overview-grid{gap:28px}}
+@media(max-width:650px){
+ #jinji-canvas .j-header{padding:10px 18px;gap:8px}
+ #jinji-canvas .j-brand .j-eyebrow{font-size:8px;letter-spacing:.08em}
+ #jinji-canvas .j-brand .j-seal{width:34px;height:38px;font-size:14px}
+ #jinji-canvas .j-brand b{font-size:16px}
+ #jinji-canvas .p-data-status{font-size:11px}
+ #jinji-canvas .j-main{padding:20px 20px 28px}
+ #jinji-canvas .p-head{gap:6px;margin-bottom:14px}
+ #jinji-canvas .p-head h2{font-size:26px}
+ #jinji-canvas .p-filters{gap:0}
+ #jinji-canvas .p-filters button{font-size:12px;padding:8px}
+ #jinji-canvas .p-context{top:-20px;padding-bottom:7px}
+ #jinji-canvas .p-view-switch .j-segments button{font-size:17px}
+ #jinji-canvas .p-view-switch>.j-caption{font-size:10px}
+ #jinji-canvas .p-amount{font-size:clamp(36px,10.5vw,48px)}
+ #jinji-canvas .p-result{padding-top:14px}
+ #jinji-canvas .p-metrics{gap:24px;margin:14px 0}
+ #jinji-canvas .p-metrics b{font-size:20px}
+ #jinji-canvas .p-basis{gap:14px}
+ #jinji-canvas .p-basis button{font-size:12px}
+ #jinji-canvas .p-lens-trigger{font-size:11px}
+ #jinji-canvas .p-overview-grid{grid-template-columns:1fr;gap:24px;margin-top:20px}
+ #jinji-canvas .p-overview-side{padding:0;border:0;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+ #jinji-canvas .p-overview-side button{border-top:1px solid var(--j-rule);border-bottom:0;padding:12px 0}
+ #jinji-canvas .p-overview-side strong{font-size:24px}
+ #jinji-canvas .p-overview-footer{grid-template-columns:1fr;gap:18px;margin-top:24px}
+ #jinji-canvas .p-record{gap:8px;grid-template-columns:33px 1fr auto}
+ #jinji-canvas .p-record b{font-size:17px}
+ #jinji-canvas .p-record strong{font-size:15px}
+ #jinji-canvas .p-config-row{grid-template-columns:1fr .8fr 1fr;gap:10px}
+ #jinji-canvas .p-config-row strong{font-size:17px}
+ #jinji-canvas .p-config-row>span:not(:first-child){font-size:21px}
+ #jinji-canvas .p-op-grid{grid-template-columns:1fr}
+ #jinji-canvas .p-config-number strong{font-size:58px}
+ #jinji-canvas .p-share-table td{font-size:17px}
+ #jinji-canvas .p-sheet-tabs{top:-20px}
+}
 
-  <details class="j-preview-settings"><summary>JINJI PREVIEW <span>全虛構資料 · 預覽設定 ↗</span></summary><aside class="j-preview-controls" aria-label="設計預覽控制">
-    <strong>JINJI / DESIGN PREVIEW</strong>
-    <label>入口<select id="j-preview-surface" aria-label="預覽入口"><option value="pwa">PWA 投資畫布</option><option value="line">LINE 查詢</option></select></label>
-    <label>外觀<select id="j-preview-appearance" aria-label="預覽外觀"><option value="auto">跟隨系統</option><option value="light">紙白</option><option value="dark">墨黑</option></select></label>
-    <label>點綴<select id="j-preview-accent" aria-label="預覽點綴色"><option value="cinnabar">朱砂</option><option value="olive">橄欖</option></select></label>
-    <span class="j-preview-note">全虛構資料 · AI 為本地示範回覆 · 操作不會寫入正式資料</span>
-  </aside></details>
-  <div class="j-app">
-    <header class="j-header">
-      <div class="j-brand"><div class="j-seal" aria-hidden="true">金<br>雞</div><div><b>JINJI</b><div class="j-eyebrow">Investment intelligence</div></div></div>
-      <nav class="j-nav" aria-label="主要空間"><button data-page="overview" aria-pressed="true"><small>01</small>總覽</button><button data-page="history" aria-pressed="false"><small>02</small>收益</button><button data-page="investment" aria-pressed="false"><small>03</small>投資</button><button data-page="ratings" aria-pressed="false"><small>04</small>評分</button><button data-page="data" aria-pressed="false"><small>05</small>資料</button></nav>
-      <span class="j-demo">設計提案 · 全部為虛構資料</span>
-    </header>
-    <main class="j-main">
-      <section data-view="overview">
-        <div class="j-toolbar"><span class="j-breadcrumb">投資組合 / 整體績效</span><label><span class="j-label">查詢期間</span><select class="j-date" id="j-period" aria-label="查詢期間"><option value="ytd">2026 年至今</option><option value="h1">2026 上半年</option><option value="h2">2026 下半年至今</option></select></label></div>
-        <div class="j-primary"><div>
-          <h2 class="j-title" id="j-headline">今年，累積。</h2>
-          <div class="j-subline">Sales Pool 已結算盈虧</div>
-          <div class="j-hero"><output id="j-total">+352,000</output><span>NT$</span></div>
-          <div class="j-subline"><span class="j-dot"></span><span id="j-count">8 水已結算</span><span>·</span><button class="j-current" id="j-ongoing">進行中 3 水 ↗</button></div>
-          <button class="j-history-entry" data-page="history"><span><b>歷史收益</b><small>按年、按月，查看每筆分配</small></span><span aria-hidden="true">↗</span></button><div class="j-chart-head"><span>累積 Pool 盈虧 / 千元</span><span>拖曳查看每一水</span></div>
-          <svg class="j-chart" id="j-chart" role="img" aria-label="依結算日期呈現的累積 Pool 盈虧階梯圖"></svg>
-          <label class="j-label" for="j-scrub">結算游標</label><input id="j-scrub" class="j-scrub" type="range" min="0" max="7" value="7" step="1" aria-label="選取結算水次">
-          <div class="j-scrub-readout"><span id="j-cursor">09.06 / 示範場 C / 第 3 水</span><button id="j-open-cycle" class="j-current">展開這一水 ↗</button></div>
-        </div><aside class="j-aside">
-          <div class="j-kpi"><span class="j-label">獲利水比例</span><div class="j-number"><output id="j-win">62.5%</output><small id="j-win-count">5 / 8 水</small></div><span class="j-caption">依整場盈虧判定</span></div>
-          <div class="j-kpi"><button id="j-best"><span class="j-label">最佳單水 · 整場</span><div class="j-number" id="j-best-num">+600,000</div><span class="j-caption" id="j-best-pool">Pool +120,000 ↗</span></button></div>
-          <div class="j-kpi"><button id="j-worst"><span class="j-label">最差單水 · 整場</span><div class="j-number" id="j-worst-num">−240,000</div><span class="j-caption" id="j-worst-pool">Pool −48,000 ↗</span></button></div>
-        </aside></div>
-        <div class="j-bottom"><div><button class="j-risk-entry" id="j-risk-open"><span><span class="j-label">目前配置 / 整場全損風險</span><b>NT$ 6,160,000</b><span class="j-caption" style="display:block">非極端最大風險 NT$ 924,000</span></span><span class="j-arrow">↗</span></button><button class="j-warning" id="j-missing" style="padding:0">1 個場資料待補，未納入計算 ↗</button></div><div class="j-intel"><button id="j-explain">解讀目前結果 <span style="float:right">↗</span><small>從數字，追到影響結果的那一水。</small></button></div></div>
-      </section>
-      <section data-view="risk" hidden>
-        <button class="j-back" data-page="overview">← 返回整體績效</button><div class="j-eyebrow">Current exposure</div><h2 class="j-title">知道自己，承擔多少。</h2><div class="j-caption">目前配置 · 2 個有效場已納入 · NT$</div>
-        <div class="j-two"><div class="j-risk-total"><span class="j-label">整場全損風險總額</span><div class="j-risk-big">6,160,000</div><span class="j-caption">標準飼養數 × 220 元</span></div><div class="j-risk-total"><span class="j-label">整場非極端最大風險</span><div class="j-risk-big">924,000</div><span class="j-caption">全損風險 × 15%</span></div></div>
-        <table class="j-table"><thead><tr><th>個人曝險</th><th>全損</th><th>非極端</th></tr></thead><tbody><tr><td>業務1</td><td>476,666.67</td><td>71,500</td></tr><tr><td>業務2</td><td>476,666.67</td><td>71,500</td></tr><tr><td>業務3</td><td>476,666.67</td><td>71,500</td></tr></tbody></table>
-        <div class="j-site-list"><button class="j-site-row" data-risk-site="A"><span>示範場 A<span class="j-caption" style="display:block">約定標準飼養數 10,000 隻</span></span><span class="j-site-num">2,200,000<span class="j-caption" style="display:block">整場全損風險</span></span><span class="j-arrow">↗</span></button><button class="j-site-row" data-risk-site="B"><span>示範場 B<span class="j-caption" style="display:block">約定標準飼養數 18,000 隻</span></span><span class="j-site-num">3,960,000<span class="j-caption" style="display:block">整場全損風險</span></span><span class="j-arrow">↗</span></button><button class="j-site-row" id="j-risk-missing"><span>示範場 C<span class="j-caption" style="display:block">標準飼養數待補</span></span><span class="j-tag">未納入 · 檢視 ↗</span></button></div>
-        <div class="j-caption" style="margin-top:18px">個人曝險依目前 Pool 比例及精確三等分計算。固定業務順序，無年化。</div>
-      </section>
-      <section data-view="history" hidden>
-        <div class="j-eyebrow">RETURN ARCHIVE</div><h2 class="j-title">歷史收益</h2>
-        <div class="j-year-strip" id="j-history-years" aria-label="收益年度"></div>
-        <div class="j-filter-row"><button id="j-history-scope" class="j-filter">全部場地 ▾</button><button id="j-history-owner" class="j-filter">Sales Pool ▾</button><button id="j-period-ledger" class="j-current">完整期間帳務 ↗</button></div>
-        <div class="j-segments" aria-label="收益金額口徑"><button data-history-basis="pool" aria-pressed="true">分配盈虧</button><button data-history-basis="net" aria-pressed="false">支出後淨收入</button></div><div class="j-history-columns"><div class="j-history-insights"><div class="j-history-summary"><div><span class="j-label" id="j-history-label"></span><div class="j-history-total" id="j-history-total"></div><span class="j-caption" id="j-history-count"></span></div><div class="j-history-split" id="j-history-split"></div></div>
-        <div class="j-section-heading"><span id="j-months-label">每月盈虧</span><button id="j-history-clear" class="j-current" hidden>清除月份 ×</button></div>
-        <div id="j-history-months" class="j-months" aria-label="選擇收益月份"></div>
-        <div class="j-caption">左右滑動月份 · 點選月份篩選結算記錄。</div></div>
-        <div id="j-history-list" aria-live="polite"></div></div>
-        <p class="j-caption"><span id="j-history-note">全虛構示例 · 按結算日查閱；發錢日另列於每筆明細。分配盈虧與支出後淨收入分開呈現。</span></p>
-      </section>
-      <section data-view="investment" hidden>
-        <div class="j-eyebrow">OWNERSHIP &amp; DISTRIBUTION</div><h2 class="j-title">投資與分配</h2>
-        <div class="j-caption">目前配置 · 三位業務共同參與，各自比例一眼看清。</div>
-        <div class="j-segments" aria-label="比例查閱方式"><button data-investment-view="sites" aria-pressed="true">依場地</button><button data-investment-view="members" aria-pressed="false">依業務</button></div>
-        <div class="j-allocation-legend"><span>① 共同占整場</span><span>×</span><span>② 個人占 Pool</span><span>=</span><span>③ 個人占整場</span></div>
-        <div id="j-investment-list" class="j-allocation-grid"></div>
-        <p class="j-caption">比例顯示至小數點後兩位；三人各 1/3 的精確合計為 100%。歷史收益使用各水當時的比例。</p>
-        <button class="j-history-entry" id="j-investment-fields"><span><b>Excel 比例原欄位</b><small>玩家＝三位業務 · 各場總股份、玩家列比例、場占比各自保留</small></span><span aria-hidden="true">↗</span></button>
-      </section>
-      <section data-view="ratings" hidden>
-        <div class="j-eyebrow">OPERATIONAL PERFORMANCE</div><h2 class="j-title">場地與代養主評分</h2>
-        <div class="j-segments" aria-label="評分對象"><button data-rating-view="sites" aria-pressed="true">各場地</button><button data-rating-view="growers" aria-pressed="false">各代養主</button></div>
-        <p class="j-caption">育成率與 FCR 分開評分，各自保留樣本數。</p>
-        <div class="j-score-notice"><span class="j-dot"></span><span>評分基準待建立 · 原始指標可先查看</span></div>
-        <div id="j-rating-list"></div>
-        <p class="j-caption">營運指標來自補充資料，不代表所有財務水次都有資料。成熟度門檻待校準；未取得資料不記為 0 分。</p>
-      </section>
-      <section data-view="data" hidden>
-        <div class="j-toolbar"><span class="j-breadcrumb">資料 / 本次變更</span><span class="j-eyebrow" id="j-data-revision">DEMO REV. 01</span></div><h2 class="j-title">每一個數字，都有來處。</h2><div class="j-caption">正式資料、來源證據與異動紀錄保留在一起。</div>
-        <button class="j-history-entry" id="j-data-fields"><span><b>Excel 完整欄位</b><small>總表、各場財務明細、比例與三位業務</small></span><span aria-hidden="true">↗</span></button>
-        <button class="j-history-entry" data-page="investment"><span><b>投資與分配</b><small>目前投資比例、業務比例與歷史版本</small></span><span aria-hidden="true">↗</span></button>
-        <div class="j-source-row"><div><strong>示範場 C · 第 3 水</strong><div class="j-caption">2026.09.06 · 已結算</div></div><button class="j-current" id="j-edit">整場盈虧 <span id="j-edit-amount">+320,000</span> ↗</button></div>
-        <div class="j-source-row"><div><strong>權威資料待比對</strong><div class="j-caption">示範場 A · 目前 Pool 20% / 來源 25%</div></div><button class="j-current" id="j-import">檢視差異 ↗</button></div>
-        <div class="j-source-row"><div><strong>示範場 C · 風險資料</strong><div class="j-caption">標準飼養數待補 · 尚未納入總額</div></div><button class="j-current" id="j-data-missing">檢視缺欄 ↗</button></div>
-        <div id="j-audit" class="j-caption" style="margin-top:24px">本次尚無異動 · 示範環境</div>
-      </section>
-      <dialog class="j-sheet" id="j-sheet" aria-labelledby="j-sheet-title"><div class="j-sheet-handle" id="j-sheet-handle"><span class="j-handle" aria-hidden="true"></span><span class="j-sheet-note">下拉收合 · 留在原位</span><button id="j-close" type="button" aria-label="關閉明細">關閉 ↓</button></div><div class="j-sheet-content" id="j-sheet-content"></div><div class="j-sheet-status" id="j-sheet-status" role="status" aria-live="polite"></div></dialog>
-      <div id="j-status" class="j-status" role="status" aria-live="polite"></div>
-    </main>
-    <footer class="j-footer"><span>JINJI / PRIVATE INVESTMENT</span><span>示範資料截至 2026.09.22 · 不連接正式資料</span></footer>
-  </div>
-  <div class="j-line" hidden>
-    <header class="j-line-top"><span>‹ 金雞投資討論</span><span>⋯</span></header><div class="j-line-chat"><div class="j-user-bubble">@金雞 整體績效</div><div class="j-eyebrow" style="margin-bottom:8px">金雞 Investment AI</div><div class="j-line-result" id="j-line-result"></div><div class="j-line-quick"><button data-line="performance">整體績效</button><button data-line="risk">風險</button><button data-line="explain">解讀結果</button><button data-line="pwa">開啟 PWA</button></div></div><div class="j-line-input">選擇查詢 · 示範互動，不傳送 LINE 訊息</div>
-  </div>
+html,body,#jinji-canvas{touch-action:pan-x pan-y}
+#jinji-canvas .p-back-edge{position:absolute;left:0;top:76px;bottom:64px;width:14px;z-index:3;touch-action:pan-y}
+#jinji-canvas .p-config-row[style]>span:last-child{font-size:16px}
+@media(max-width:650px){#jinji-canvas .p-config-row[style]>span:last-child{font-size:14px}#jinji-canvas .p-op-values strong{font-size:29px}}
+
+@media(max-width:650px){#jinji-canvas .p-config-detail{padding-top:12px}#jinji-canvas .p-timeline{margin:14px 0;padding-top:10px}#jinji-canvas .p-config-number{padding:14px 0 8px}#jinji-canvas .p-share-table td{padding:10px 0}}
+
+</style>
+<div id="jinji-canvas" aria-label="金雞觸控投資工具">
+ <details class="j-preview-settings"><summary>JINJI PREVIEW <span>全虛構資料 · 預覽設定 ↗</span></summary><aside class="j-preview-controls" aria-label="設計預覽控制"><label>入口<select id="j-preview-surface" aria-label="預覽入口"><option value="pwa">PWA</option><option value="line">LINE 查詢示範</option></select></label><label>外觀<select id="j-preview-appearance" aria-label="預覽外觀"><option value="auto">跟隨系統</option><option value="light">紙白</option><option value="dark">墨黑</option></select></label><label>點綴<select id="j-preview-accent" aria-label="預覽點綴色"><option value="cinnabar">朱砂</option><option value="olive">橄欖</option></select></label><span class="j-preview-note">18 場 · 6 位代養主 · 2023–2026 · AI 為本地示範</span></aside></details>
+ <div class="j-app">
+  <header class="j-header"><div class="j-brand"><div class="j-seal" aria-hidden="true">金<br>雞</div><div><b>JINJI</b><div class="j-eyebrow">Investment intelligence</div></div></div><nav class="j-nav" aria-label="主要空間"><button data-action="page" data-value="overview" aria-pressed="true"><small>01</small>總覽</button><button data-action="page" data-value="portfolio" aria-pressed="false"><small>02</small>組合</button><button data-action="page" data-value="operations" aria-pressed="false"><small>03</small>營運表現</button></nav><button class="p-data-status" id="j-data-status" data-action="issues" aria-label="資料狀態，5 項待處理"><i></i>5 項待處理</button></header>
+  <div id="p-back-edge" class="p-back-edge" aria-hidden="true"></div><main class="j-main" id="j-main"><section data-view="overview" id="p-overview"></section><section data-view="portfolio" id="p-portfolio" hidden></section><section data-view="operations" id="p-operations" hidden></section></main>
+  <footer class="j-footer"><span>JINJI / INVESTMENT INTELLIGENCE</span><span>18 場全虛構樣本 · 更新至 2026.09.22</span></footer>
+ </div>
+ <div class="j-line" id="p-line" hidden></div>
+ <dialog class="j-sheet" id="j-sheet" aria-labelledby="j-sheet-title"><div class="j-sheet-handle" id="j-sheet-handle"><span class="j-handle" aria-hidden="true"></span><button id="j-sheet-back" aria-label="返回上一層明細" hidden>← 返回</button><span class="j-sheet-note">下拉收合 · 留在原位</span><button id="j-close" type="button" aria-label="關閉明細">關閉 ↓</button></div><div class="j-sheet-content" id="j-sheet-content"></div><div class="j-sheet-status" id="j-sheet-status" role="status" aria-live="polite"></div></dialog>
+ <div class="p-live" id="j-status" role="status" aria-live="polite"></div>
 </div>
+
 <script>
 (()=>{
-const root=document.getElementById('jinji-canvas');
-const q=s=>root.querySelector(s),qa=s=>Array.from(root.querySelectorAll(s));
-const cycles=[
- {site:'A',n:1,date:'2026-01-09',farm:480000,pool:.2},
- {site:'B',n:1,date:'2026-02-14',farm:-240000,pool:.2},
- {site:'C',n:1,date:'2026-03-21',farm:360000,pool:.2},
- {site:'A',n:2,date:'2026-04-07',farm:0,pool:.2},
- {site:'B',n:2,date:'2026-05-19',farm:600000,pool:.2},
- {site:'C',n:2,date:'2026-06-18',farm:-180000,pool:.2},
- {site:'A',n:3,date:'2026-07-26',farm:420000,pool:.2},
- {site:'C',n:3,date:'2026-09-06',farm:320000,pool:.2}
+// Independently invented preview records. No attachment values or entities are used.
+const TODAY='2026-09-22';
+const memberIds=['1','2','3'];
+const equalSplit=()=>[1/3,1/3,1/3];
+const sites=Array.from({length:18},(_,i)=>({id:String.fromCharCode(65+i),name:`示範場 ${String.fromCharCode(65+i)}`,grower:`g${Math.floor(i/3)+1}`,standard:['C','Q'].includes(String.fromCharCode(65+i))?null:10000+i*800}));
+const growers=Array.from({length:6},(_,i)=>({id:`g${i+1}`,name:`示範代養主${['甲','乙','丙','丁','戊','己'][i]}`,sites:sites.filter(s=>s.grower===`g${i+1}`).map(s=>s.id)}));
+const configurations={};
+sites.forEach((s,i)=>{
+ const initial=i<3?.2:[.12,.18,.24,.3][i%4];
+ const versions=[{id:`${s.id}-v1`,date:'2023-01-01',fromYear:2023,fromN:1,pool:initial,split:equalSplit()}];
+ if(i>=3)versions.push({id:`${s.id}-v2`,date:'2025-01-01',fromYear:2025,fromN:1,pool:initial+.03,split:i%2?[.4,.35,.25]:equalSplit()});
+ if(s.id==='B')versions.push({id:'B-v2',date:'2026-08-01',fromYear:2026,fromN:3,pool:.25,split:equalSplit()});
+ else if(i>=3&&i%3===0)versions.push({id:`${s.id}-v3`,date:'2026-07-01',fromYear:2026,fromN:3,pool:initial+.06,split:[.5,.3,.2]});
+ configurations[s.id]=versions;
+});
+const versionFor=(site,year,n)=>configurations[site].filter(v=>v.fromYear<year||(v.fromYear===year&&v.fromN<=n)).at(-1);
+const legacy=[
+ ['A',1,'2024-03-12',260000],['B',1,'2024-06-24',-140000],['C',1,'2024-11-08',340000],
+ ['A',1,'2025-02-08',380000],['B',1,'2025-03-18',-160000],['C',1,'2025-05-06',290000],['A',2,'2025-07-16',460000],['B',2,'2025-09-23',180000],['C',2,'2025-12-14',-110000],
+ ['A',1,'2026-01-09',480000],['B',1,'2026-02-14',-240000],['C',1,'2026-03-21',360000],['A',2,'2026-04-07',0],['B',2,'2026-05-19',600000],['C',2,'2026-06-18',-180000],['A',3,'2026-07-26',420000],['C',3,'2026-09-06',320000]
 ];
-
-const pastCycles=[
- {site:'A',n:1,date:'2024-03-12',farm:260000,pool:.2},
- {site:'B',n:1,date:'2024-06-24',farm:-140000,pool:.2},
- {site:'C',n:1,date:'2024-11-08',farm:340000,pool:.2},
- {site:'A',n:1,date:'2025-02-08',farm:380000,pool:.2},
- {site:'B',n:1,date:'2025-03-18',farm:-160000,pool:.2},
- {site:'C',n:1,date:'2025-05-06',farm:290000,pool:.2},
- {site:'A',n:2,date:'2025-07-16',farm:460000,pool:.2},
- {site:'B',n:2,date:'2025-09-23',farm:180000,pool:.2},
- {site:'C',n:2,date:'2025-12-14',farm:-110000,pool:.2}
-];
-const allCycles=()=>[...pastCycles,...cycles];
-const growers={alpha:{name:'示範代養主甲',sites:['A','C']},beta:{name:'示範代養主乙',sites:['B']}};
-// Independently invented operational samples. A missing weight remains null.
-const operations=cycles.map(c=>({site:c.site,grower:c.site==='B'?'beta':'alpha',date:c.date,n:c.n,
- chicks:10000,shipped:c.site==='A'?9420:c.site==='B'?9260:9310,
- feed:c.site==='C'&&c.n===3?null:c.site==='A'?69300:c.site==='B'?61750:71700,
- weight:c.site==='C'&&c.n===3?null:c.site==='B'?25000:30000}));
-const members=[1,2,3];
-const currentAllocations={
- A:{pool:.2,split:[1/3,1/3,1/3],effective:'2026 年第 1 水起'},
- B:{pool:.25,split:[1/3,1/3,1/3],effective:'2026 年第 3 水起'},
- C:{pool:.2,split:[1/3,1/3,1/3],effective:'2026 年第 1 水起'}
-};
-const allocationSnapshots=new Map(allCycles().map(c=>[c,Object.freeze({pool:c.pool,split:Object.freeze([1/3,1/3,1/3])})]));
-const ledgerExamples=new Map(allCycles().map(c=>{
- const date=new Date(c.date+'T00:00:00Z');date.setUTCDate(date.getUTCDate()+14);
- const expense=({'2026-09-06':1000,'2026-07-26':600,'2025-12-14':1200})[c.date]||0;
- return [c,{payoutDate:date.toISOString().slice(0,10),expense,note:expense?'虛構分配支出示例':'虛構零支出示例'}];
-}));
+const records=[];
+function addRecord(site,n,date,farm,i){
+ const year=+date.slice(0,4),v=versionFor(site,year,n),payout=new Date(date+'T00:00:00Z');payout.setUTCDate(payout.getUTCDate()+14);
+ const expense=site==='C'&&date==='2026-09-06'?1000:site==='A'&&date==='2026-07-26'?600:site==='C'&&date==='2025-12-14'?1200:i%5===0?1800:0;
+ records.push({id:`${site}-${year}-${n}`,site,n,date,payoutDate:payout.toISOString().slice(0,10),farm,expense,snapshot:Object.freeze({version:v.id,pool:v.pool,split:Object.freeze([...v.split]),fromYear:v.fromYear,fromN:v.fromN}),note:expense?'虛構分配支出示例':'虛構零支出示例'});
+}
+legacy.forEach((r,i)=>addRecord(...r,i+1));
+sites.forEach((s,i)=>{for(let year=2023;year<=2026;year++){if(i<3&&year>2023)continue;for(let n=1;n<=3;n++){
+ const month=n===1?'03':n===2?'07':year===2026?'09':'12';
+ const day=String(year===2026?3+(i+n)%6:n===3?19+i%7:8+(i*3+n)%17).padStart(2,'0');
+ const code=i*19+(year-2023)*7+n*11;
+ const farm=code%9===0?0:code%4===0?-(100000+(code%8)*26000):210000+(code%15)*29000;
+ addRecord(s.id,n,`${year}-${month}-${day}`,farm,code);
+}}});
+records.sort((a,b)=>b.date.localeCompare(a.date)||a.site.localeCompare(b.site));
+const operations=records.map((c,i)=>{
+ const missing=(i%7===0)||(c.site==='R'&&c.date.startsWith('2026'));
+ const chicks=11000+(c.site.charCodeAt(0)%7)*1600,shipped=Math.round(chicks*(.865+(i%11)*.009));
+ const weight=shipped*(2.05+(i%6)*.11);
+ return {id:c.id,site:c.site,grower:sites.find(s=>s.id===c.site).grower,date:c.date,updatedAt:c.date,chicks:missing?null:chicks,shipped:missing?null:shipped,weight:missing||i%5===0?null:weight,feed:missing||i%5===0?null:weight*(2.14+(i%9)*.047)};
+});
+const issues=[
+ {id:'conflict',name:'權威資料衝突',sites:['A'],summary:'示範場 A 的來源比例與目前配置不同。',detail:'目前共同占比 20%，虛構來源列出 25%。來源比例的語意與生效水次仍需核對；既有有效設定及歷史快照維持原值。'},
+ {id:'unmapped',name:'財務列尚未對應水次',sites:['F'],summary:'1 筆財務列保留在帳務暫存。',detail:'虛構發錢日 2026-09-02、來源金額 +18,000。未确认結算日或水次身份，故不計入已結算水數與正式績效。'},
+ {id:'risk',name:'風險資料缺欄',sites:['C','Q'],summary:'2 場缺少約定標準飼養數。',detail:'示範場 C、Q 未納入靜態風險總額；盈虧與分配查詢仍可使用。缺值不視為零曝險。'},
+ {id:'import',name:'匯入異常',sites:['J'],summary:'虛構批次 004 有 1 列日期格式無法辨識。',detail:'該列已隔離在匯入暫存，未覆蓋有效資料。需核對來源日期；不將公式空白列當成新水次。'},
+ {id:'stale',name:'補充營運資料過舊',sites:['R'],summary:'示範場 R 的 2026 年營運輸入尚未取得。',detail:'保留歷史補充資料及原始日期，不覆蓋為零。2026 年育成率及 FCR 顯示尚無資料，財務記錄仍正常呈現。'}
+].map(x=>({...x,detail:x.detail.replace('确认','確認')}));
+const sum=(arr,fn=x=>x)=>arr.reduce((n,x)=>n+fn(x),0);
+const money=n=>Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:2});
+const signed=n=>(n<0?'−':n>0?'+':'')+money(n);
 const pct=n=>Number((n*100).toFixed(2))+'%';
-const snapshot=c=>allocationSnapshots.get(c);
-const ledger=c=>{const detail=ledgerExamples.get(c);return {...detail,distributed:pool(c),net:pool(c)-detail.expense};};
-const design={surface:'pwa',accent:'cinnabar',appearance:'auto'};
-const state={page:'overview',period:'ytd',cursor:7,revision:1,lineView:'performance',lineContext:'performance',historyYear:'2026',historyMonth:null,historyScope:'all',historyOwner:'pool',ratingView:'sites',investmentView:'sites',historyBasis:'pool'};
-const fmt=n=>Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:2});
-const signed=n=>(n<0?'−':n>0?'+':'')+fmt(n);
-const pool=c=>Math.round(c.farm*c.pool);
-const filtered=()=>cycles.filter(c=>state.period==='h1'?c.date<'2026-07-01':state.period==='h2'?c.date>='2026-07-01':true);
-const periodLabel=()=>state.period==='h1'?'2026 上半年':state.period==='h2'?'2026 下半年至今':'2026 年至今';
-const allSum=()=>filtered().reduce((s,c)=>s+pool(c),0);
-function persist(){try{localStorage.setItem('jinji-preview-ui-v2',JSON.stringify({modelContent:{surface:design.surface,page:state.page,period:state.period,accent:design.accent,appearance:design.appearance,lineView:state.lineView,lineContext:state.lineContext,historyYear:state.historyYear,historyScope:state.historyScope,historyOwner:state.historyOwner,ratingView:state.ratingView,investmentView:state.investmentView,historyBasis:state.historyBasis},privateContent:{cursor:state.cursor}}));}catch{}}
-function restore(saved){if(!saved)return;const m=saved.modelContent||{},p=saved.privateContent||{};if(['overview','risk','history','investment','ratings','data'].includes(m.page))state.page=m.page;if(['sites','members'].includes(m.investmentView))state.investmentView=m.investmentView;if(['pool','net'].includes(m.historyBasis))state.historyBasis=m.historyBasis;if(m.page==='sites')state.page='ratings';if(['all','2026','2025','2024'].includes(m.historyYear))state.historyYear=m.historyYear;if(['all','A','B','C','alpha','beta'].includes(m.historyScope))state.historyScope=m.historyScope;if(['pool','1','2','3'].includes(m.historyOwner))state.historyOwner=m.historyOwner;if(['sites','growers'].includes(m.ratingView))state.ratingView=m.ratingView;if(['ytd','h1','h2'].includes(m.period))state.period=m.period;if(['pwa','line'].includes(m.surface))design.surface=m.surface;if(['cinnabar','olive'].includes(m.accent))design.accent=m.accent;if(['auto','light','dark'].includes(m.appearance))design.appearance=m.appearance;if(Number.isInteger(p.cursor))state.cursor=p.cursor;if(['performance','risk','explain'].includes(m.lineView))state.lineView=m.lineView;if(['performance','risk'].includes(m.lineContext))state.lineContext=m.lineContext;}
-function setStatus(t){if(q('#j-sheet').open)q('#j-sheet-status').textContent=t;else q('#j-status').textContent=t;}
-let sheetOrigin=null;
-const pageScroll={};
-function close(){const sheet=q('#j-sheet');if(!sheet.open)return;const origin=sheetOrigin;sheetOrigin=null;sheet.style.transform='';sheet.close();document.documentElement.classList.remove('j-modal-open');q('#j-sheet-content').innerHTML='';q('#j-sheet-status').textContent='';if(origin){origin.focus?.focus({preventScroll:true});q('.j-main').scrollTop=origin.contentY;}}
-function page(name){
- close();pageScroll[state.page]=q('.j-main').scrollTop;state.page=name;
- qa('[data-view]').forEach(e=>e.hidden=e.dataset.view!==name);
- qa('.j-nav button').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.page===(name==='risk'?'overview':name))));
- setStatus('');render();q('.j-main').scrollTop=pageScroll[name]||0;persist();
+const pool=c=>Math.round(c.farm*c.snapshot.pool);
+const net=c=>pool(c)-c.expense;
+const amount=(c,ctx)=> (ctx.basis==='net'?net(c):pool(c))*(ctx.owner==='pool'?1:c.snapshot.split[Number(ctx.owner)-1]);
+const siteIds=scope=>scope==='all'?sites.map(s=>s.id):growers.find(g=>g.id===scope)?.sites||[scope];
+const scopeName=scope=>scope==='all'?'全部場地':growers.find(g=>g.id===scope)?.name||sites.find(s=>s.id===scope)?.name||'全部場地';
+const ownerName=owner=>owner==='pool'?'Sales Pool':`業務${owner}`;
+const periodName=ctx=>(ctx.year==='all'?'全部年度':ctx.year+' 年')+(ctx.month?' · '+ctx.month+' 月':'');
+const contextRows=(ctx,ignoreMonth=false)=>records.filter(c=>siteIds(ctx.scope).includes(c.site)&&(ctx.year==='all'||c.date.startsWith(ctx.year))&&(ignoreMonth||ctx.month===null||+c.date.slice(5,7)===ctx.month));
+const cutoff=ctx=>ctx.year==='all'?TODAY:ctx.month?`${ctx.year}-${String(ctx.month).padStart(2,'0')}-${new Date(+ctx.year,+ctx.month,0).getDate()}`:ctx.year==='2026'?TODAY:ctx.year+'-12-31';
+const configAt=(site,ctx)=>configurations[site].filter(v=>v.date<=cutoff(ctx)).at(-1)||configurations[site][0];
+function operatingStats(rows){const s=rows.filter(r=>r.chicks>0&&r.shipped!==null),f=rows.filter(r=>r.weight>0&&r.feed!==null);return {survival:s.length?sum(s,r=>r.shipped)/sum(s,r=>r.chicks)*100:null,fcr:f.length?sum(f,r=>r.feed)/sum(f,r=>r.weight):null,sN:s.length,fN:f.length,total:rows.length,complete:rows.filter(r=>r.chicks>0&&r.shipped!==null&&r.weight>0&&r.feed!==null).length,shipped:sum(s,r=>r.shipped),chicks:sum(s,r=>r.chicks),feed:sum(f,r=>r.feed),weight:sum(f,r=>r.weight),latest:rows.filter(r=>r.chicks!==null||r.feed!==null).map(r=>r.date).sort().at(-1)||null};}
+function timelineNodes(site,ctx){
+ const rows=contextRows({...ctx,scope:site}).slice().reverse();
+ const nodes=rows.map(c=>({key:c.id,date:c.date,title:`${c.date} · 第 ${c.n} 水`,allocation:c.snapshot,record:c.id,kind:'已結算快照'}));
+ configurations[site].filter(v=>v.date<=cutoff(ctx)&&(ctx.year==='all'||v.date.startsWith(ctx.year))&&(ctx.month===null||+v.date.slice(5,7)===ctx.month)).forEach(v=>nodes.push({key:v.id,date:v.date,title:`${v.fromYear} 年第 ${v.fromN} 水起`,allocation:v,kind:'配置生效'}));
+ nodes.sort((a,b)=>a.date.localeCompare(b.date)||a.key.localeCompare(b.key));
+ const v=configAt(site,ctx);nodes.push({key:'period-end',date:cutoff(ctx),title:`截至 ${cutoff(ctx)}`,allocation:v,kind:cutoff(ctx)===TODAY?'目前有效配置':'期間末配置'});
+ return nodes;
 }
 
-function open(html){const sheet=q('#j-sheet'),body=q('#j-sheet-content');if(!sheet.open)sheetOrigin={focus:document.activeElement,contentY:q('.j-main').scrollTop};body.innerHTML=html;body.scrollTop=0;q('#j-sheet-status').textContent='';const title=body.querySelector('h3');if(title)title.id='j-sheet-title';if(!sheet.open){document.documentElement.classList.add('j-modal-open');sheet.showModal();q('.j-main').scrollTop=sheetOrigin.contentY;}q('#j-close').focus({preventScroll:true});}
-function chart(){const a=filtered(),svg=q('#j-chart'),w=Math.max(250,svg.clientWidth||550),h=214,L=38,R=12,T=18,B=30;let sum=0;const vals=a.map(c=>sum+=pool(c));const max=Math.max(...vals,1)*1.15,min=Math.min(0,...vals);const start=Date.parse(state.period==='h2'?'2026-07-01':'2026-01-01'),end=Date.parse(state.period==='h1'?'2026-06-30':'2026-09-22');const X=i=>L+(w-L-R)*(Date.parse(a[i].date)-start)/(end-start),Y=v=>h-B-(v-min)/(max-min)*(h-T-B);state.cursor=Math.max(0,Math.min(state.cursor,a.length-1));let path=`M${L},${Y(0)}`;vals.forEach((v,i)=>{path+=`H${X(i)}V${Y(v)}`});const ticks=[min,(min+max)/2,max].map(v=>{const round=Math.round(v/1000);return `<line class="j-grid" x1="${L}" y1="${Y(v)}" x2="${w-R}" y2="${Y(v)}"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${round}</text>`}).join('');const indexes=[0,Math.floor((a.length-1)/2),a.length-1].filter((v,i,s)=>s.indexOf(v)===i);svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.innerHTML=`<title>${periodLabel()}，累積 Pool 盈虧 ${signed(sum)} 元；${a.length} 水</title>${ticks}<path class="j-curve" d="${path}"/>${indexes.map(i=>`<text x="${X(i)}" y="${h-5}" text-anchor="${i===a.length-1?'end':'middle'}">${a[i].date.slice(5).replace('-','.')}</text>`).join('')}<line class="j-guide" x1="${X(state.cursor)}" y1="${T}" x2="${X(state.cursor)}" y2="${h-B}"/><circle class="j-point" cx="${X(state.cursor)}" cy="${Y(vals[state.cursor])}" r="5"/>`;const c=a[state.cursor];q('#j-cursor').textContent=`${c.date.slice(5).replace('-','.')} / 示範場 ${c.site} / 第 ${c.n} 水 · 累積 ${signed(vals[state.cursor])}`;q('#j-scrub').max=a.length-1;q('#j-scrub').value=state.cursor;q('#j-scrub').setAttribute('aria-valuetext',q('#j-cursor').textContent);}
-function render(){const a=filtered(),best=a.reduce((x,y)=>x.farm>=y.farm?x:y),worst=a.reduce((x,y)=>x.farm<=y.farm?x:y);q('#j-period').value=state.period;q('#j-total').textContent=signed(allSum());q('#j-headline').textContent=state.period==='ytd'?'今年，累積。':'這段時間，累積。';q('#j-count').textContent=`${a.length} 水已結算`;q('#j-win').textContent=`${+(a.filter(c=>c.farm>0).length/a.length*100).toFixed(1)}%`;q('#j-win-count').textContent=`${a.filter(c=>c.farm>0).length} / ${a.length} 水`;q('#j-best-num').textContent=signed(best.farm);q('#j-best-pool').textContent=`Pool ${signed(pool(best))} ↗`;q('#j-worst-num').textContent=signed(worst.farm);q('#j-worst-pool').textContent=`Pool ${signed(pool(worst))} ↗`;q('#j-edit-amount').textContent=signed(cycles[7].farm);q('#j-data-revision').textContent=`DEMO REV. ${String(state.revision).padStart(2,'0')}`;chart();if(state.page==='history')renderHistory();if(state.page==='ratings')renderRatings();if(state.page==='investment')renderInvestment();}
-function cycle(c,items=filtered()){const index=items.indexOf(c);const overviewIndex=filtered().indexOf(c);if(overviewIndex>=0){state.cursor=overviewIndex;chart();}persist();const record=ledger(c),allocation=snapshot(c);open(`<div class="j-cycle-body" id="j-cycle-body"><div class="j-eyebrow">SETTLEMENT / ${c.date.replaceAll('-','.')}</div><h3>示範場 ${c.site} · 第 ${c.n} 水</h3>
-<div class="j-trace"><div><span class="j-label">分配盈虧 · 費用前</span><strong>${signed(record.distributed)}</strong></div><div><span class="j-label">淨收入 · 費用後</span><strong>${signed(record.net)}</strong></div></div>
-<section class="j-detail-section"><h4>這一水的投資比例</h4><div class="j-allocation-main"><span class="j-label">三位業務共同占整場<br>Sales Pool</span><strong>${pct(allocation.pool)}</strong></div>${shareRows(allocation)}<p class="j-caption">歷史比例快照 · 目前配置不回算這一水。</p></section>
-<section class="j-detail-section"><h4>完整財務欄位 · NT$</h4><dl class="j-financial-fields">
-<div><dt>結算日</dt><dd>${c.date}</dd></div><div><dt>日期（發錢日）</dt><dd>${record.payoutDate}</dd></div>
-<div><dt>總盈虧 · 整場</dt><dd>${signed(c.farm)}</dd></div><div><dt>分配盈虧 · Pool</dt><dd>${signed(record.distributed)}</dd></div><div><dt>支出費用 · 分配後扣除</dt><dd>${fmt(record.expense)}</dd></div><div class="j-net-line"><dt>淨收入</dt><dd>${signed(record.net)}</dd></div>
-${members.map((n,i)=>`<div><dt>業務${n} · 淨收入分配</dt><dd>${signed(record.net*allocation.split[i])}</dd></div>`).join('')}
-<div><dt>合計 · 三位業務</dt><dd>${signed(record.net)}</dd></div><div><dt>備註</dt><dd style="font-size:13px">${record.note}</dd></div></dl>
-<p class="j-caption">總盈虧 × 該水 Pool 比例 = 分配盈虧；分配盈虧 − 支出費用 = 淨收入。個人金額依該水內部分配計算。顯示金額四捨五入，合計以精確值計算。</p><p class="j-caption">全虛構格式示例。發錢日與結算日分開；來源帳務口徑仍待正式確認，未匯入真實資料。</p></section></div><nav class="j-cycle-nav" aria-label="切換結算水次"><button id="j-prev-cycle" type="button" ${index===0?'disabled':''}>← 上一水</button><span>${index+1} / ${items.length} 水<br>左右滑動切換</span><button id="j-next-cycle" type="button" ${index===items.length-1?'disabled':''}>下一水 →</button></nav>`);const move=step=>{if(items[index+step])cycle(items[index+step],items);};q('#j-prev-cycle').onclick=()=>move(-1);q('#j-next-cycle').onclick=()=>move(1);const area=q('#j-cycle-body');let start=null;area.onpointerdown=e=>{if(e.isPrimary&&e.button===0)start={x:e.clientX,y:e.clientY,id:e.pointerId};};area.onpointermove=e=>{if(!start||start.id!==e.pointerId)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>10){start=null;return;}if(Math.abs(dx)>12)area.setPointerCapture(e.pointerId);};area.onpointerup=e=>{if(start&&start.id===e.pointerId){const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5)move(dx<0?1:-1);}start=null;};area.onpointercancel=()=>start=null;setStatus(`已展開示範場 ${c.site} 第 ${c.n} 水`);}
-function missing(){open('<div class="j-eyebrow">DATA COMPLETENESS</div><h3>示範場 C · 風險資料待補</h3><p>缺少「投資時約定的標準飼養數」。此場仍為有效場，尚未納入風險總額及個人曝險。</p><div class="j-caption">欄位必須依已確認資料補登，不能用最近一水的入雛數代替。</div>');}
-function riskSite(id){const a=id==='A',farm=a?2200000:3960000,share=a?.2:.25;open(`<div class="j-eyebrow">CURRENT EXPOSURE / SITE ${id}</div><h3>示範場 ${id}</h3><div class="j-trace"><div><span class="j-label">整場全損</span><strong>${fmt(farm)}</strong></div><div><span class="j-label">整場非極端</span><strong>${fmt(farm*.15)}</strong></div></div><table class="j-table"><thead><tr><th>個人曝險</th><th>全損</th><th>非極端</th></tr></thead><tbody>${[1,2,3].map(n=>`<tr><td>業務${n}</td><td>${fmt(farm*share/3)}</td><td>${fmt(farm*.15*share/3)}</td></tr>`).join('')}</tbody></table><p class="j-caption">目前 Pool ${share*100}% · 三人精確等分 · NT$</p>`);}
-
-function scopeName(){return state.historyScope==='all'?'全部場地':growers[state.historyScope]?.name||`示範場 ${state.historyScope}`;}
-function scoped(c){return state.historyScope==='all'||c.site===state.historyScope||growers[state.historyScope]?.sites.includes(c.site);}
-function income(c){const amount=state.historyBasis==='net'?ledger(c).net:pool(c);return amount*(state.historyOwner==='pool'?1:snapshot(c).split[Number(state.historyOwner)-1]);}
-function yearRecords(){return allCycles().filter(c=>(state.historyYear==='all'||c.date.startsWith(state.historyYear))&&scoped(c));}
-function historyRecords(){return yearRecords().filter(c=>state.historyMonth===null||+c.date.slice(5,7)===state.historyMonth).sort((a,b)=>b.date.localeCompare(a.date));}
-function choose(title,options,current,apply){open(`<h3>${title}</h3><div class="j-choice-list">${options.map(([id,label])=>`<button data-choice="${id}" aria-pressed="${id===current}"><span>${label}</span><span>${id===current?'✓':''}</span></button>`).join('')}</div>`);qa('[data-choice]').forEach(b=>b.onclick=()=>{close();apply(b.dataset.choice);renderHistory();persist();});}
-function renderHistory(){
- const active=document.activeElement,focusYear=active?.dataset?.historyYear,focusMonth=active?.dataset?.month;
- const records=historyRecords(),base=yearRecords(),sum=records.reduce((s,c)=>s+income(c),0),profit=records.reduce((s,c)=>s+Math.max(0,income(c)),0),loss=records.reduce((s,c)=>s+Math.min(0,income(c)),0);
- const owner=state.historyOwner==='pool'?'Sales Pool':`業務${state.historyOwner}`;
- q('#j-history-years').innerHTML=['2026','2025','2024','all'].map(y=>`<button data-history-year="${y}" aria-pressed="${state.historyYear===y}">${y==='all'?'全部':y}</button>`).join('');
- qa('[data-history-year]').forEach(b=>b.onclick=()=>{state.historyYear=b.dataset.historyYear;state.historyMonth=null;renderHistory();persist();});
- q('#j-history-scope').textContent=scopeName()+' ▾';q('#j-history-owner').textContent=owner+' ▾';
- qa('[data-history-basis]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.historyBasis===state.historyBasis)));
- q('#j-history-note').textContent=state.historyBasis==='net'?'全虛構帳務示例 · 依結算日歸屬，扣除分配後支出；發錢日另列明細。未變更首頁正式 Pool 盈虧口徑。':'全虛構示例 · 依結算日歸屬，呈現分配盈虧（費用前）；發錢日另列明細。';
- const period=state.historyYear==='all'?'所有年度':`${state.historyYear} 年`;
- q('#j-history-label').textContent=`${period}${state.historyMonth?' · '+state.historyMonth+' 月':''} / ${owner} ${state.historyBasis==='net'?'淨收入 · 費用後':'分配盈虧 · 費用前'}`;
- q('#j-history-total').innerHTML=`${signed(sum)}<small>NT$</small>`;
- q('#j-history-count').textContent=`${scopeName()} · ${records.length} 水已結算${state.historyOwner==='pool'?'':' · 依各水歷史分配比例'}`;
- q('#j-history-split').innerHTML=`<div>獲利合計<b>${signed(profit)}</b></div><div>虧損合計<b class="j-negative">${signed(loss)}</b></div>`;
- q('#j-history-clear').hidden=state.historyMonth===null;
- q('#j-months-label').textContent=state.historyYear==='all'?'同月份合計 · 跨年':'每月盈虧';
- const months=Array.from({length:12},(_,i)=>({n:i+1,rows:base.filter(c=>+c.date.slice(5,7)===i+1)}));
- months.forEach(m=>m.sum=m.rows.reduce((s,c)=>s+income(c),0));const max=Math.max(1,...months.map(m=>Math.abs(m.sum)));
- q('#j-history-months').innerHTML=months.map(m=>`<button class="j-month" data-month="${m.n}" aria-label="${m.n} 月，${m.rows.length?`${m.rows.length} 水，盈虧 ${signed(m.sum)} 元`:'無結算'}" aria-pressed="${state.historyMonth===m.n}" ${m.rows.length?'':'disabled'}><span class="j-bar-track">${m.rows.length?`<span class="j-bar ${m.sum<0?'negative':''}" style="--bar-size:${Math.max(2,Math.abs(m.sum)/max*(m.sum<0?31:60))}%"></span>`:''}</span><small>${m.n}月</small></button>`).join('');
- qa('[data-month]').forEach(b=>b.onclick=()=>{state.historyMonth=state.historyMonth===+b.dataset.month?null:+b.dataset.month;renderHistory();});
- const groups=[...new Set(records.map(c=>c.date.slice(0,7)))];
- q('#j-history-list').innerHTML=groups.length?groups.map(key=>{const rows=records.filter(c=>c.date.startsWith(key));return `<section class="j-ledger-month"><h3>${key.slice(0,4)} / ${key.slice(5)}<span>${signed(rows.reduce((s,c)=>s+income(c),0))} 元</span></h3>${rows.map(c=>`<button class="j-ledger-row" data-history-record="${records.indexOf(c)}"><span class="j-ledger-date">${c.date.slice(5).replace('-','/')}</span><span><span class="j-ledger-name">示範場 ${c.site}</span><span class="j-caption" style="display:block">第 ${c.n} 水 · 已結算</span></span><span class="j-ledger-money ${income(c)<0?'j-negative':''}">${signed(income(c))} <small>↗</small></span></button>`).join('')}</section>`;}).join(''):'<div class="j-empty-message">這個範圍尚無結算記錄。可切換年度或場地。</div>';
- qa('[data-history-record]').forEach(b=>b.onclick=()=>cycle(records[+b.dataset.historyRecord],records));
- if(focusYear)q(`[data-history-year="${focusYear}"]`)?.focus({preventScroll:true});
- if(focusMonth)q(`[data-month="${focusMonth}"]`)?.focus({preventScroll:true});
+const root=document.getElementById('jinji-canvas'),q=s=>root.querySelector(s),qa=s=>[...root.querySelectorAll(s)];
+const ctxDefault={scope:'all',year:'2026',owner:'pool',month:null,basis:'pool'};
+const state={page:'overview',view:'returns',ctx:{...ctxDefault},opView:'sites',opYear:'2026',selected:{},timeline:{},scroll:{},rail:0,design:{surface:'pwa',appearance:'auto',accent:'cinnabar'}};
+const clone=x=>JSON.parse(JSON.stringify(x));
+function restore(){try{const saved=JSON.parse(localStorage.getItem('jinji-preview-ui-v3'));if(saved){if(['overview','portfolio','operations'].includes(saved.page))state.page=saved.page;if(['returns','allocation'].includes(saved.view))state.view=saved.view;if(saved.ctx){const c=saved.ctx;if(['all',...sites.map(s=>s.id),...growers.map(g=>g.id)].includes(c.scope))state.ctx.scope=c.scope;if(['all','2023','2024','2025','2026'].includes(c.year))state.ctx.year=c.year;if(['pool',...memberIds].includes(c.owner))state.ctx.owner=c.owner;if(c.month===null||Number.isInteger(c.month)&&c.month>=1&&c.month<=12)state.ctx.month=c.month;if(['pool','net'].includes(c.basis))state.ctx.basis=c.basis;}if(['sites','growers'].includes(saved.opView))state.opView=saved.opView;if(['all','2023','2024','2025','2026'].includes(saved.opYear))state.opYear=saved.opYear;['selected','timeline','scroll'].forEach(k=>{if(saved[k]&&typeof saved[k]==='object'&&!Array.isArray(saved[k]))state[k]=saved[k];});if(Number.isFinite(saved.rail))state.rail=saved.rail;if(saved.design)Object.assign(state.design,saved.design);}
+ else {const old=JSON.parse(localStorage.getItem('jinji-preview-ui-v2'))?.modelContent;if(old){state.page=['history','investment'].includes(old.page)?'portfolio':old.page==='ratings'?'operations':'overview';state.view=old.page==='investment'?'allocation':'returns';if(['all','A','B','C'].includes(old.historyScope))state.ctx.scope=old.historyScope;if(['all','2024','2025','2026'].includes(old.historyYear))state.ctx.year=old.historyYear;if(['pool',...memberIds].includes(old.historyOwner))state.ctx.owner=old.historyOwner;['appearance','accent','surface'].forEach(k=>{if(old[k])state.design[k]=old[k];});}}
+ if(!['pwa','line'].includes(state.design.surface))state.design.surface='pwa';if(!['auto','light','dark'].includes(state.design.appearance))state.design.appearance='auto';if(!['cinnabar','olive'].includes(state.design.accent))state.design.accent='cinnabar';
+}catch{}}
+const persist=()=>{try{localStorage.setItem('jinji-preview-ui-v3',JSON.stringify(state));}catch{}};
+const scrollKey=()=>state.page==='portfolio'?`${state.page}:${state.view}:${JSON.stringify(state.ctx)}`:state.page==='operations'?`operations:${state.opYear}:${state.opView}`:state.page;
+const capture=()=>{state.scroll[scrollKey()]=q('.j-main').scrollTop;const rail=q('.p-rail');if(rail)state.rail=rail.scrollLeft;};
+const backTrail=[];let restoring=false;
+function transition(fn){capture();backTrail.push(clone(state));if(backTrail.length>40)backTrail.shift();fn();render();persist();}
+function goBack(){if(modal){modalBack();return;}if(!backTrail.length)return;capture();Object.assign(state,backTrail.pop());render();persist();q('#j-status').textContent='已返回上一個查看範圍';}
+function changeContext(next){transition(()=>Object.assign(state.ctx,next));}
+function goPortfolio(next={}){transition(()=>{state.page='portfolio';Object.assign(state.ctx,next);});}
+const btn=(action,label,value='',extra='')=>`<button data-action="${action}" data-value="${value}" data-key="${action}-${value}" ${extra}>${label}</button>`;
+const caption=text=>`<span class="j-caption">${text}</span>`;
+const viewLabel=()=>state.view==='returns'?'收益':'配置';
+function render(){
+ const focused=document.activeElement?.dataset?.key;
+ qa('[data-view]').forEach(e=>e.hidden=e.dataset.view!==state.page);
+ qa('.j-nav button').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.value===state.page)));
+ if(state.page==='overview')q('#p-overview').innerHTML=overviewHTML();
+ if(state.page==='portfolio')q('#p-portfolio').innerHTML=portfolioHTML();
+ if(state.page==='operations')q('#p-operations').innerHTML=operationsHTML();
+ const d=state.design;root.style.colorScheme=d.appearance==='auto'?'light dark':d.appearance;document.documentElement.style.colorScheme=root.style.colorScheme;root.style.setProperty('--j-accent',d.accent==='olive'?'light-dark(#626b35,#bcc784)':'light-dark(#b94228,#e68466)');
+ q('.j-app').hidden=d.surface==='line';q('.j-line').hidden=d.surface!=='line';['surface','appearance','accent'].forEach(k=>q('#j-preview-'+k).value=d[k]);if(d.surface==='line')renderLine();
+ restoring=true;q('.j-main').scrollTop=Number(state.scroll[scrollKey()])||0;const rail=q('.p-rail');if(rail)rail.scrollLeft=state.rail;restoring=false;
+ if(focused)q(`[data-key="${CSS.escape(focused)}"]`)?.focus({preventScroll:true});
 }
-function stats(rows){const s=rows.filter(r=>r.chicks>0&&r.shipped!==null),f=rows.filter(r=>r.weight>0&&r.feed!==null);return {survival:s.length?s.reduce((v,r)=>v+r.shipped,0)/s.reduce((v,r)=>v+r.chicks,0)*100:null,fcr:f.length?f.reduce((v,r)=>v+r.feed,0)/f.reduce((v,r)=>v+r.weight,0):null,survivalN:s.length,fcrN:f.length,total:rows.length};}
-function metrics(v){return `<div class="j-score-metrics"><div class="j-score-metric"><span class="j-label">育成率評分</span><div class="j-score-value">—<small>/ 100</small></div><div class="j-score-raw">${v.survival===null?'尚無補充資料':`育成率 ${v.survival.toFixed(2)}%`}</div><div class="j-caption">${v.survivalN} 水納入</div></div><div class="j-score-metric"><span class="j-label">FCR 評分</span><div class="j-score-value">—<small>/ 100</small></div><div class="j-score-raw">${v.fcr===null?'尚無補充資料':`FCR ${v.fcr.toFixed(2)}`}</div><div class="j-caption">${v.fcrN} 水納入${v.total>v.fcrN?' · '+(v.total-v.fcrN)+' 水缺必要欄位':''}</div></div></div>`;}
-function ratingRows(kind,id){return operations.filter(r=>kind==='sites'?r.site===id:r.grower===id);}
-function ratingName(kind,id){return kind==='sites'?`示範場 ${id}`:growers[id].name;}
-function renderRatings(){const kind=state.ratingView,ids=kind==='sites'?['A','B','C']:Object.keys(growers);qa('[data-rating-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ratingView===kind)));q('#j-rating-list').innerHTML=ids.map(id=>{const rows=ratingRows(kind,id);return `<button class="j-score-card" data-rating-id="${id}"><div class="j-score-heading"><span><strong>${ratingName(kind,id)}</strong><span class="j-caption" style="display:block">${kind==='sites'?growers[rows[0].grower].name:growers[id].sites.length+' 個場地 · 跨場歷史'}</span></span><span class="j-arrow">↗</span></div>${metrics(stats(rows))}<div class="j-caption" style="margin-top:14px">評分基準待建立 · 查看證據</div></button>`;}).join('');qa('[data-rating-id]').forEach(b=>b.onclick=()=>ratingDetail(kind,b.dataset.ratingId));}
-function ratingDetail(kind,id){
- const rows=ratingRows(kind,id),v=stats(rows),name=ratingName(kind,id);
- open(`<div class="j-eyebrow">${kind==='sites'?'SITE':'GROWER'} / 評分與證據</div><h3>${name}</h3>${metrics(v)}<p class="j-caption">正式評分基準待建立，尚未產生分數。<br>樣本成熟度待校準。以下均為虛構營運資料。</p><div class="j-trace"><div><span class="j-label">育成率依據</span><strong>${fmt(rows.reduce((n,r)=>n+r.shipped,0))}</strong><span class="j-caption" style="display:block">出雞 / ${fmt(rows.reduce((n,r)=>n+r.chicks,0))} 入雞</span></div><div><span class="j-label">FCR 依據</span><strong>${fmt(rows.filter(r=>r.weight>0&&r.feed!==null).reduce((n,r)=>n+r.feed,0))}</strong><span class="j-caption" style="display:block">飼料 kg / ${fmt(rows.filter(r=>r.weight>0&&r.feed!==null).reduce((n,r)=>n+r.weight,0))} 活重 kg</span></div></div><div class="j-caption" style="margin-top:14px">資料期間 ${rows[0].date} ～ ${rows.at(-1).date}。各指標僅納入必要輸入完整的已完成水次。</div><div class="j-inline-options">${kind==='sites'?`<button data-linked-grower="${rows[0].grower}">查看${growers[rows[0].grower].name} ↗</button>`:growers[id].sites.map(site=>`<button data-linked-site="${site}">示範場 ${site} 評分 ↗</button>`).join('')}<button id="j-rating-history">查看${kind==='sites'?'此場':'旗下場地'}歷史收益 ↗</button></div>`);
- qa('[data-linked-grower]').forEach(b=>b.onclick=()=>ratingDetail('growers',b.dataset.linkedGrower));qa('[data-linked-site]').forEach(b=>b.onclick=()=>ratingDetail('sites',b.dataset.linkedSite));
- q('#j-rating-history').onclick=()=>{state.historyScope=id;state.historyYear='all';state.historyMonth=null;pageScroll.history=0;page('history');};
+function overviewHTML(){
+ const rows=contextRows(ctxDefault),best=rows.reduce((a,b)=>a.farm>b.farm?a:b),worst=rows.reduce((a,b)=>a.farm<b.farm?a:b),wins=rows.filter(c=>c.farm>0).length;
+ return `<div class="j-eyebrow">THE BIG PICTURE / 2026</div><div class="p-overview-grid"><div><h2 class="j-title">今年，累積。</h2><div class="p-result-top"><span class="j-label">18 場 · 已結算 Pool 盈虧</span>${btn('lens','解讀此處 ↗','overview','class="p-lens-trigger"')}</div><div class="p-amount" id="p-overview-total" data-lens="overview">${signed(sum(rows,pool))}<small>NT$</small></div><div class="p-metrics"><div><b>${rows.length}</b><span>水已結算</span></div><div><b>${pct(wins/rows.length)}</b><span>獲利水比例 · 整場</span></div><div><b>18</b><span>水進行中</span></div></div>${btn('ongoing','進行中水次 ↗','','class="j-current"')}<div class="j-caption">長按數字，帶著目前範圍解讀。</div>${btn('portfolio',`<span><b>進入組合</b><small>${scopeName(state.ctx.scope)} · ${periodName(state.ctx)} · ${ownerName(state.ctx.owner)}</small></span><span>↗</span>`,'','class="j-history-entry"')}</div><aside class="p-overview-side">${btn('cycle',`<span class="j-label">最佳單水 · 整場</span><strong>${signed(best.farm)}</strong><span class="j-caption">示範場 ${best.site} · 第 ${best.n} 水 / Pool ${signed(pool(best))} ↗</span>`,best.id)}${btn('cycle',`<span class="j-label">最差單水 · 整場</span><strong>${signed(worst.farm)}</strong><span class="j-caption">示範場 ${worst.site} · 第 ${worst.n} 水 / Pool ${signed(pool(worst))} ↗</span>`,worst.id)}</aside></div><div class="p-overview-footer"><div><div class="j-section-heading"><span>最近結算</span>${caption('原位展開，不離開總覽')}</div>${records.slice(0,3).map(c=>recordButton(c,ctxDefault)).join('')}</div><div>${btn('risk',`<span><b>目前配置風險</b><small>16 場可計算 · 2 場待補標準飼養數</small></span><span>↗</span>`,'','class="j-history-entry"')}<p class="j-caption">無本金的盈虧參與模式。進行中水次不估列收益；財務列需確認水次與結算日後才納入正式績效。</p></div></div>`;
 }
-function site(id){ratingDetail('sites',id);}
-
-
-function periodLedger(){const rows=historyRecords(),totals=rows.reduce((t,c)=>{const l=ledger(c);t.farm+=c.farm;t.distributed+=l.distributed;t.expense+=l.expense;t.net+=l.net;snapshot(c).split.forEach((share,i)=>t.members[i]+=l.net*share);return t;},{farm:0,distributed:0,expense:0,net:0,members:[0,0,0]});open(`<div class="j-eyebrow">PERIOD LEDGER</div><h3>完整期間帳務</h3><p class="j-caption">${scopeName()} · ${state.historyYear==='all'?'全部年度':state.historyYear+' 年'}${state.historyMonth?' · '+state.historyMonth+' 月':''}<br>依結算日 · ${rows.length} 筆虛構記錄 · NT$</p><dl class="j-financial-fields"><div><dt>總盈虧 · 整場累計</dt><dd>${signed(totals.farm)}</dd></div><div><dt>分配盈虧 · Pool 累計</dt><dd>${signed(totals.distributed)}</dd></div><div><dt>支出費用累計</dt><dd>${fmt(totals.expense)}</dd></div><div class="j-net-line"><dt>淨收入累計</dt><dd>${signed(totals.net)}</dd></div>${members.map((n,i)=>`<div><dt>業務${n} · 淨收入累計</dt><dd>${signed(totals.members[i])}</dd></div>`).join('')}<div><dt>合計 · 三位業務</dt><dd>${signed(totals.net)}</dd></div></dl><p class="j-caption">此表依目前年度、月份與場地範圍列出三位業務的完整帳務。每筆按自己的歷史比例計算後加總；金額顯示四捨五入，合計使用精確值。來源合計須另外核對，不重複計入。</p>`);}
-function shareRows(a){return `<div class="j-share-header"><span>業務</span><span>Pool 內分配</span><span>換算占整場</span></div>${members.map((n,i)=>`<div class="j-share-row"><span>業務${n}</span><span>${pct(a.split[i])}<small>精確 1/3</small></span><span>${pct(a.pool*a.split[i])}</span></div>`).join('')}`;}
-function showHistory(scope,owner='pool'){state.historyScope=scope;state.historyOwner=owner;state.historyYear='all';state.historyMonth=null;pageScroll.history=0;page('history');}
-function renderInvestment(){
- qa('[data-investment-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.investmentView===state.investmentView)));
- q('#j-investment-list').innerHTML=state.investmentView==='sites'?Object.entries(currentAllocations).map(([id,a])=>`<article class="j-allocation-card"><h3>示範場 ${id}</h3><span class="j-caption">目前配置 · ${a.effective}</span><div class="j-allocation-main"><span class="j-label">三位業務共同占整場<br>Sales Pool</span><strong>${pct(a.pool)}</strong></div>${shareRows(a)}<div class="j-inline-options"><button data-allocation-history="${id}">比例歷史 ↗</button><button data-investment-history="${id}">此場收益 ↗</button></div></article>`).join(''):members.map((n,i)=>`<article class="j-allocation-card"><h3>業務${n}</h3><span class="j-caption">目前參與 3 個場地 · Excel「玩家」</span><div class="j-share-header" style="margin-top:24px"><span>場地 / 共同占比</span><span>Pool 內分配</span><span>個人占整場</span></div>${Object.entries(currentAllocations).map(([id,a])=>`<div class="j-share-row"><span>示範場 ${id}<small>共同 ${pct(a.pool)}</small></span><span>${pct(a.split[i])}<small>精確 1/3</small></span><span>${pct(a.pool*a.split[i])}</span></div><div class="j-caption">${a.effective}</div>`).join('')}<div class="j-inline-options"><button data-member-history="${n}">個人歷史收益 ↗</button></div></article>`).join('');
- qa('[data-allocation-history]').forEach(b=>b.onclick=()=>allocationHistory(b.dataset.allocationHistory));
- qa('[data-investment-history]').forEach(b=>b.onclick=()=>showHistory(b.dataset.investmentHistory));
- qa('[data-member-history]').forEach(b=>b.onclick=()=>showHistory('all',b.dataset.memberHistory));
+function contextHTML(){const c=state.ctx;return `<div class="p-context"><div class="p-head"><h2>組合</h2><div class="p-filters">${btn('year',periodName(c)+' ▾')}${btn('owner',ownerName(c.owner)+' ▾')}</div></div><div class="p-rail" aria-label="共用場地範圍">${btn('scope','全部','all',`aria-pressed="${c.scope==='all'}"`)}${growers.some(g=>g.id===c.scope)?btn('scope',scopeName(c.scope),c.scope,'aria-pressed="true"'):''}${sites.map(s=>btn('scope','場 '+s.id,s.id,`aria-pressed="${c.scope===s.id}"`)).join('')}</div><div class="p-view-switch"><div class="j-segments" aria-label="組合視角">${btn('view','收益','returns',`aria-pressed="${state.view==='returns'}"`)}${btn('view','配置','allocation',`aria-pressed="${state.view==='allocation'}"`)}</div><span class="j-caption">${siteIds(c.scope).length} 場 · ${c.month?c.month+' 月 · ':''}${c.owner==='pool'?'三位業務共同參與':'業務'+c.owner}</span></div></div>`;}
+function portfolioHTML(){return contextHTML()+(state.view==='returns'?returnsHTML():allocationHTML());}
+function recordButton(c,ctx){return btn('cycle',`<small>${c.date.slice(5).replace('-','/')}</small><span><strong>示範場 ${c.site}</strong><small>${c.date.slice(0,4)} · 第 ${c.n} 水${state.selected[c.site]===c.id?' · 上次查看':''}</small></span><b class="${amount(c,ctx)<0?'j-negative':''}">${signed(amount(c,ctx))} <small>↗</small></b>`,c.id,'class="p-record"');}
+function monthlyHTML(ctx){const base=contextRows(ctx,true);const periods=ctx.year==='all'?['2023','2024','2025','2026']:Array.from({length:12},(_,i)=>i+1);const values=periods.map(k=>({k,rows:base.filter(c=>ctx.year==='all'?c.date.startsWith(k):+c.date.slice(5,7)===k)}));values.forEach(v=>v.total=sum(v.rows,c=>amount(c,ctx)));const max=Math.max(1,...values.map(v=>Math.abs(v.total)));return `<div class="j-section-heading"><span>${ctx.year==='all'?'年度走勢':'月份走勢'}</span>${ctx.month?btn('month-clear','清除月份 ×','','class="j-current"'):caption('點選以縮小範圍')}</div><div class="j-months" style="${ctx.year==='all'?'grid-template-columns:repeat(4,1fr)':''}" aria-label="收益時間走勢">${values.map(v=>btn(ctx.year==='all'?'year-direct':'month',`<span class="j-bar-track">${v.rows.length?`<span class="j-bar ${v.total<0?'negative':''}" style="--bar-size:${Math.max(2,Math.abs(v.total)/max*(v.total<0?31:60))}%"></span>`:''}</span><small>${v.k}${ctx.year==='all'?'':'月'}</small>`,v.k,`class="j-month" aria-pressed="${ctx.month===v.k}" aria-label="${v.k}${ctx.year==='all'?' 年':' 月'}，${v.rows.length} 水，${signed(v.total)} 元" ${v.rows.length?'':'disabled'}`)).join('')}</div>`;}
+function returnsHTML(){const c=state.ctx,rows=contextRows(c),positive=rows.filter(r=>amount(r,c)>0),negative=rows.filter(r=>amount(r,c)<0),groups=[...new Set(rows.map(r=>r.date.slice(0,7)))];return `<div class="p-columns"><div class="p-sticky-result"><div class="p-result"><div class="p-result-top"><div class="p-basis" aria-label="收益金額口徑">${btn('basis','分配盈虧','pool',`aria-pressed="${c.basis==='pool'}"`)}${btn('basis','支出後淨收入','net',`aria-pressed="${c.basis==='net'}"`)}</div>${btn('lens','解讀此處 ↗','returns','class="p-lens-trigger"')}</div><div class="j-caption" id="p-result-label">${scopeName(c.scope)} · ${periodName(c)} · ${ownerName(c.owner)}</div><div class="p-amount" id="p-return-total" data-lens="returns">${signed(sum(rows,r=>amount(r,c)))}<small>NT$</small></div><div class="p-metrics"><div><b>${rows.length}</b><span>水已結算</span></div><div><b>${positive.length} / ${negative.length}</b><span>獲利 / 虧損水</span></div></div><div class="j-caption">獲利 ${signed(sum(positive,r=>amount(r,c)))} · 虧損 ${signed(sum(negative,r=>amount(r,c)))} · 打平 ${rows.length-positive.length-negative.length} 水</div>${monthlyHTML(c)}<div class="j-caption">依結算日歸屬 · 發錢日另列於每水明細。</div>${btn('period-ledger','完整期間帳務 ↗','','class="j-current"')}${contextIssueHTML()}</div></div><div class="p-ledger" id="p-ledger-list">${rows.length?groups.map(g=>`<h3>${g.replace('-',' / ')}<span>${signed(sum(rows.filter(r=>r.date.startsWith(g)),r=>amount(r,c)))} 元</span></h3>${rows.filter(r=>r.date.startsWith(g)).map(r=>recordButton(r,c)).join('')}`).join(''):'<div class="p-empty">這個範圍沒有已確認的結算水次。可調整年度或場地；暫存財務列不計入績效。</div>'}</div></div>`;}
+function contextIssueHTML(){if(state.ctx.scope==='all')return '';const affected=issues.filter(i=>i.sites.some(s=>siteIds(state.ctx.scope).includes(s)));return affected.length?btn('context-issues',`${scopeName(state.ctx.scope)} · ${affected.length} 項資料狀態需留意 ↗`,'','class="p-context-issue"'):'';}
+function shareTable(a,owner=state.ctx.owner){return `<table class="p-share-table"><thead><tr><th>業務</th><th>Pool 內比例</th><th>個人占整場</th></tr></thead><tbody>${memberIds.map((id,i)=>`<tr data-selected="${owner===id}"><td>業務${id}</td><td>${pct(a.split[i])}${a.split[i]===1/3?'<small>精確 1/3</small>':''}</td><td>${pct(a.pool*a.split[i])}</td></tr>`).join('')}</tbody></table>`;}
+function allocationHTML(){const ids=siteIds(state.ctx.scope);if(ids.length===1)return allocationDetailHTML(ids[0]);return `<div class="p-result-top" style="margin-top:20px"><div><span class="j-label">${cutoff(state.ctx)===TODAY?'目前有效配置':'期間末配置'}</span><div class="j-caption">截至 ${cutoff(state.ctx)} · 點選場地，拖曳歷史快照</div></div>${btn('lens','解讀配置 ↗','allocation','class="p-lens-trigger"')}</div><div class="p-config-list"><div class="j-caption" style="display:flex;justify-content:space-between"><span>場地 / 生效水次</span><span>共同占整場 / ${state.ctx.owner==='pool'?'三位業務內部分配':'個人占整場'}</span></div>${ids.map(id=>{const a=configAt(id,state.ctx);return btn('scope',`<span><strong>示範場 ${id}</strong><small>${a.fromYear} · 第 ${a.fromN} 水起</small></span><span>${pct(a.pool)}<small>Pool 占整場</small></span><span>${state.ctx.owner==='pool'?a.split.every(x=>x===1/3)?'各 1/3':a.split.map(x=>Math.round(x*100)).join(' / ')+'%':pct(a.pool*a.split[+state.ctx.owner-1])}<small>${state.ctx.owner==='pool'?'業務 1 / 2 / 3':'業務'+state.ctx.owner+' 占整場'} ↗</small></span>`,id,`class="p-config-row" ${state.ctx.owner==='pool'?'style="--split-size:12px"':''}`);}).join('')}</div><p class="j-caption">共同占整場 × 個人 Pool 內比例 = 個人占整場。資料期間及業務篩選與收益視角共用。</p>${contextIssueHTML()}`;}
+const timelineKey=site=>`${site}:${state.ctx.year}:${state.ctx.month||'all'}`;
+function selectedNode(site,nodes){const remembered=state.timeline[timelineKey(site)]||state.selected[site];return nodes.find(n=>n.key===remembered)||nodes.at(-1);}
+function allocationDetailHTML(site){const nodes=timelineNodes(site,state.ctx),node=selectedNode(site,nodes),index=nodes.indexOf(node);return `<div class="p-config-detail"><div class="p-result-top"><span class="j-label">示範場 ${site} · 怎麼分</span>${btn('lens','解讀此處 ↗','allocation','class="p-lens-trigger"')}</div><div class="p-timeline"><div class="p-timeline-head"><span>拖曳比例時間軸</span><span id="p-timeline-count">${index+1} / ${nodes.length}</span></div><label class="p-live" for="p-ratio-timeline">比例歷史時間軸</label><input id="p-ratio-timeline" type="range" min="0" max="${nodes.length-1}" step="1" value="${index}" aria-valuetext="${node.title}，${node.kind}，Pool ${pct(node.allocation.pool)}" data-site="${site}"><div class="p-timeline-dates"><span>${nodes[0].date}</span><span>${nodes.at(-1).date}</span></div><div class="p-timeline-actions">${btn('timeline-step','← 前一個','-1',index===0?'disabled':'')}<span>結算快照與配置生效點</span>${btn('timeline-step','後一個 →','1',index===nodes.length-1?'disabled':'')}</div></div><div id="p-allocation-snapshot">${allocationSnapshotHTML(node,site)}</div>${contextIssueHTML()}</div>`;}
+function allocationSnapshotHTML(node,site){const a=node.allocation;return `<span class="p-version-badge">${node.kind}</span><h3 style="font-size:21px;font-weight:500;margin:6px 0">${node.title}</h3><div class="p-config-number" data-lens="allocation"><span>Sales Pool<br>三位業務共同占整場</span><strong>${pct(a.pool)}</strong></div>${shareTable(a)}<p class="j-caption">${a.fromYear} 年第 ${a.fromN} 水起生效 · ${node.record?'此水快照不受目前配置變更影響。':'適用範圍以明確生效水次為準。'}</p>${node.record?btn('cycle','查看這一水的收益 ↗',node.record,'class="j-current"'):''}<p class="j-caption">金額與比例顯示四捨五入，內部分配精確合計 100%。</p>`;}
+function moveTimeline(index){const input=q('#p-ratio-timeline');if(!input)return;const site=input.dataset.site,nodes=timelineNodes(site,state.ctx),i=Math.max(0,Math.min(nodes.length-1,index)),node=nodes[i];state.timeline[timelineKey(site)]=node.key;if(node.record)state.selected[site]=node.record;input.value=i;input.setAttribute('aria-valuetext',`${node.title}，${node.kind}，Pool ${pct(node.allocation.pool)}`);q('#p-timeline-count').textContent=`${i+1} / ${nodes.length}`;q('#p-allocation-snapshot').innerHTML=allocationSnapshotHTML(node,site);qa('[data-action="timeline-step"]').forEach(b=>b.disabled=+b.dataset.value<0?i===0:i===nodes.length-1);persist();}
+function opRows(kind,id,year=state.opYear){return operations.filter(o=>(year==='all'||o.date.startsWith(year))&&(kind==='sites'?o.site===id:o.grower===id));}
+const opName=(kind,id)=>kind==='sites'?`示範場 ${id}`:growers.find(g=>g.id===id).name;
+function opMetrics(v){return `<div class="p-op-values"><div><small>育成率</small><strong>${v.survival===null?'尚無資料':v.survival.toFixed(2)+'%'}</strong><small>${v.sN} / ${v.total} 水有必要輸入</small></div><div><small>FCR</small><strong>${v.fcr===null?'尚無資料':v.fcr.toFixed(2)}</strong><small>${v.fN} / ${v.total} 水有必要輸入</small></div></div><div class="p-completeness" aria-hidden="true"><span style="width:${v.total?v.complete/v.total*100:0}%"></span></div><span class="j-caption">完整營運輸入 ${v.complete} / ${v.total} 水 · ${v.total?Math.round(v.complete/v.total*100):0}%</span>`;}
+function operationsHTML(){const kind=state.opView,items=kind==='sites'?sites:growers;return `<div class="p-head"><div><div class="j-eyebrow">OPERATIONAL PERFORMANCE</div><h2>營運表現</h2></div>${btn('op-year',(state.opYear==='all'?'全部年度':state.opYear+' 年')+' ▾','','class="j-current"')}</div><div class="j-caption">看育成率、FCR 與證據完整度。正式評分基準尚未建立。</div><div class="j-segments" aria-label="營運表現對象">${btn('op-view','場地','sites',`aria-pressed="${kind==='sites'}"`)}${btn('op-view','代養主','growers',`aria-pressed="${kind==='growers'}"`)}</div><div class="p-op-grid">${items.map(item=>{const v=operatingStats(opRows(kind,item.id));return btn('op-detail',`<h3>${opName(kind,item.id)} ↗</h3><div class="j-caption">${kind==='sites'?growers.find(g=>g.id===item.grower).name:item.sites.length+' 個場地'}</div>${opMetrics(v)}<div class="j-caption">${v.latest?'營運資料至 '+v.latest:'本期間尚無補充營運資料'}</div>`,`${kind}:${item.id}`,'class="p-op-card"');}).join('')}</div>`;}
+let modal=null,modalTrail=[],origin=null,audit='本次沒有示範更正。';
+function showModal(desc,push=true){const sheet=q('#j-sheet');if(!sheet.open){capture();origin={focus:document.activeElement,y:q('.j-main').scrollTop};modalTrail=[];sheet.showModal();}else if(push&&modal){modal.scroll=q('#j-sheet-content').scrollTop;modalTrail.push(modal);}modal=desc;renderModal();}
+function closeModal(){if(!q('#j-sheet').open)return;q('#j-sheet').close();q('#j-sheet-content').innerHTML='';q('#j-sheet-status').textContent='';q('#j-sheet').style.transform='';modal=null;modalTrail=[];if(origin){origin.focus?.focus({preventScroll:true});q('.j-main').scrollTop=origin.y;}origin=null;persist();}
+function modalBack(){if(!modalTrail.length){closeModal();return;}modal=modalTrail.pop();renderModal();}
+function renderModal(){q('#j-sheet-back').hidden=!modalTrail.length;q('#j-sheet-content').innerHTML=modalHTML(modal);const heading=q('#j-sheet-content h3');if(heading)heading.id='j-sheet-title';q('#j-sheet-content').scrollTop=modal.scroll||0;q('#j-sheet-status').textContent='';q('#j-close').focus({preventScroll:true});}
+function openCycle(id,items){const c=records.find(r=>r.id===id);if(!c)return;const inherited=modal?.type==='lens'?modal.context.ctx:state.page==='portfolio'?state.ctx:ctxDefault;state.selected[c.site]=id;state.timeline[timelineKey(c.site)]=id;persist();const scope=items|| (state.page==='portfolio'?contextRows(state.ctx):contextRows(ctxDefault)).map(r=>r.id);showModal({type:'cycle',id,ctx:{...clone(inherited),scope:c.site},tab:'returns',items:scope.includes(id)?scope:[id],tabScroll:{}});}
+const fieldsHTML=items=>`<dl class="p-money-list">${items.map(([label,value,netRow])=>`<div ${netRow?'class="p-net"':''}><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>`;
+function cycleHTML(m){const c=records.find(r=>r.id===m.id),a=c.snapshot,index=m.items.indexOf(c.id);return `<div class="j-cycle-body" id="p-cycle-body"><div class="j-eyebrow">${c.date} / SETTLEMENT</div><h3>示範場 ${c.site} · 第 ${c.n} 水</h3><div class="p-sheet-tabs" aria-label="單水查看角度">${btn('cycle-tab','收益明細','returns',`aria-pressed="${m.tab==='returns'}"`)}${btn('cycle-tab','比例快照','allocation',`aria-pressed="${m.tab==='allocation'}"`)}</div>${m.tab==='allocation'?`<span class="p-version-badge">這一水的歷史快照</span><div class="p-config-number" data-lens="cycle"><span>三位業務共同占整場<br>Sales Pool</span><strong>${pct(a.pool)}</strong></div>${shareTable(a,m.ctx.owner)}<p class="j-caption">${a.fromYear} 年第 ${a.fromN} 水起生效。後續變更不回算此水。</p>${btn('cycle-portfolio','在組合時間軸查看 ↗',c.id,'class="j-current"')}`:`<div class="p-result-top"><span class="j-label">分配盈虧 · 費用前</span>${btn('lens','解讀這一水 ↗','cycle','class="p-lens-trigger"')}</div><div class="p-sheet-total" data-lens="cycle">${signed(pool(c))}<small style="font-size:12px"> NT$</small></div>${fieldsHTML([['結算日',c.date],['日期（發錢日）',c.payoutDate],['總盈虧 · 整場',signed(c.farm)],['分配盈虧 · Pool',signed(pool(c))],['支出費用',money(c.expense)],['淨收入 · 費用後',signed(net(c)),true],...memberIds.map((id,i)=>['業務'+id+' · 淨收入分配',signed(net(c)*a.split[i])]),['合計 · 三位業務',signed(net(c))]])}<p class="j-caption">備註：${c.note}<br>總盈虧 × 該水 Pool 比例 = 分配盈虧；再扣分配後支出 = 淨收入。個人金額依該水內部分配。合計使用未四捨五入的值。</p>${btn('edit','更正此筆示範金額 ↗',c.id,'class="j-current"')}`}</div><nav class="j-cycle-nav" aria-label="切換單水明細">${btn('cycle-step','← 上一水','-1',index===0?'disabled':'')}<span>${index+1} / ${m.items.length} 水<br>左右滑動切換</span>${btn('cycle-step','下一水 →','1',index===m.items.length-1?'disabled':'')}</nav>`;}
+function periodLedgerHTML(ctx){const rows=contextRows(ctx),totals={farm:sum(rows,r=>r.farm),pool:sum(rows,pool),expense:sum(rows,r=>r.expense),net:sum(rows,net),members:memberIds.map((_,i)=>sum(rows,r=>net(r)*r.snapshot.split[i]))};return `<div class="j-eyebrow">PERIOD LEDGER</div><h3>完整期間帳務</h3><p class="j-caption">${scopeName(ctx.scope)} · ${periodName(ctx)}<br>依結算日 · ${rows.length} 水 · NT$</p>${fieldsHTML([['總盈虧 · 整場累計',signed(totals.farm)],['分配盈虧 · Pool 累計',signed(totals.pool)],['支出費用累計',money(totals.expense)],['淨收入累計',signed(totals.net),true],...memberIds.map((id,i)=>['業務'+id+' · 淨收入累計',signed(totals.members[i])]),['三位業務合計',signed(totals.net)]])}<p class="j-caption">各水依自己的歷史比例計算後加總，三位業務逐人列出。來源合計另作核對，不重複當交易計入。</p>`;}
+function sourceFieldsHTML(){const fields=[['場名','共用場地列，以及單水明細的場地身份。'],['各場總股份','與其他來源比例分欄保存。持分對象及與 Pool 關係尚待確認，不代填數值。'],['玩家','已確認指三位業務。介面統一使用「業務」。'],['玩家列的各場比例','保留原欄位；對應 Pool 的映射待確認，不能和各場總股份互相覆蓋。'],['各業務 × 各場比例','組合 → 配置：各業務 Pool 內比例、換算占整場比例。'],['合計盈虧','組合 → 收益：可依年度、業務與場地查閱，來源合計另核對。'],['場占比','保留原比例標籤，與總表比例的映射待確認。'],['各業務分配比例、比例合計','配置及單水快照逐人顯示，內部分配須精確合計 100%。'],['日期（發錢日）','单水財務明細中與結算日分開列出，允许跨年。'],['總盈虧','單水明細的整場最終盈虧。'],['分配盈虧','收益的費用前金額：整場盈虧 × 該水 Pool 比例。'],['支出費用','單水帳務及期間帳務中的分配後支出，與整場成本分開。'],['淨收入','收益可切換費用後淨收入；單水與期間帳務各自列出。'],['三位業務各自金額','單水與期間帳務逐人列出，收益可單獨查看某位業務。'],['合計、各欄累計','完整期間帳務列出各欄累計及三人合計。'],['備註','單水財務明細保留來源備註，不從文字推定正式比例或水次。']];return `<div class="j-eyebrow">SOURCE FIELD GUIDE</div><h3>Excel 完整欄位</h3><p class="j-caption">主要工作簿可獨立支援財務更新；補充營運資料不齊，不阻擋財務查閱。以下為設計對照，未匯入真實附件。</p><div class="p-source-fields">${fields.map(([name,text])=>`<div><b>${name}</b><span>${text.replace('单水','單水').replace('允许','允許')}</span></div>`).join('')}</div>`;}
+function issueHTML(m){if(m.type==='issue'){const issue=issues.find(i=>i.id===m.id);return `<div class="j-eyebrow">DATA EXCEPTION</div><h3>${issue.name}</h3><p>${issue.detail}</p><div class="p-lens-context">${issue.sites.map(s=>`<span>示範場 ${s}</span>`).join('')}</div>${issue.sites.map(s=>btn('issue-site','查看示範場 '+s+' ↗',s,'class="j-current"')).join('')}<p class="j-caption">虛構異常情境。此預覽提供查閱，不會假裝完成匯入、修復或權威資料確認。</p>`;}const list=m.scope?issues.filter(i=>i.sites.some(s=>siteIds(m.scope).includes(s))):issues;return `<div class="j-eyebrow">DATA HEALTH</div><h3>${list.length?list.length+' 項待處理':'資料正常'}</h3><p class="j-caption">${m.scope?scopeName(m.scope)+' · ':''}已隔離異常項目，可用資料仍照常查詢。</p>${list.map(i=>btn('issue',`<span><strong>${i.name}</strong><small>${i.summary}</small></span><span>↗</span>`,i.id,'class="p-issue"')).join('')}<div class="j-inline-options">${btn('fields','Excel 完整欄位 ↗')}${btn('sample','虛構資料規模 ↗')}</div><p class="j-caption">${audit}</p>`;}
+function opDetailHTML(m){const rows=opRows(m.kind,m.id,m.year),v=operatingStats(rows);return `<div class="j-eyebrow">OPERATING EVIDENCE / ${m.year==='all'?'ALL YEARS':m.year}</div><h3>${opName(m.kind,m.id)}</h3>${opMetrics(v)}${fieldsHTML([['育成率分子 / 分母',v.sN?`${money(v.shipped)} / ${money(v.chicks)}`:'必要輸入未提供'],['FCR 飼料 / 活重 kg',v.fN?`${money(v.feed)} / ${money(v.weight)}`:'必要輸入未提供']])}<p class="j-caption">育成率以總出雞／總入雞加權；FCR 以總飼料／總活重加權。各指標只納入必要欄位完整的水次，缺值不補零。</p><div class="p-result-top"><span class="j-caption">${v.latest?'資料至 '+v.latest:'本期間尚無補充資料'}</span>${btn('lens','解讀表現 ↗','operations','class="p-lens-trigger"')}</div><div class="j-inline-options">${btn('op-portfolio','查看同期收益 ↗',m.id)}</div><p class="j-caption">正式 0–100 分與成熟度門檻尚未建立；此處顯示實際指標與樣本完整度。</p>`;}
+function riskHTML(){const valid=sites.filter(s=>s.standard!==null),total=sum(valid,s=>s.standard*220),personal=memberIds.map((_,i)=>sum(valid,s=>s.standard*220*configAt(s.id,ctxDefault).pool*configAt(s.id,ctxDefault).split[i]));return `<div class="j-eyebrow">CURRENT EXPOSURE</div><h3>目前配置風險</h3><p class="j-caption">${valid.length} 場納入，${sites.length-valid.length} 場缺標準飼養數 · NT$</p>${fieldsHTML([['整場全損風險',money(total)],['非極端最大風險',money(total*.15)]])}<table class="p-share-table"><thead><tr><th>業務</th><th>全損曝險</th><th>非極端</th></tr></thead><tbody>${memberIds.map((id,i)=>`<tr><td>業務${id}</td><td>${money(personal[i])}</td><td>${money(personal[i]*.15)}</td></tr>`).join('')}</tbody></table><p class="j-caption">整場全損＝約定標準飼養數 × 220；非極端＝全損 × 15%。個人依目前有效兩層比例分配。這是靜態配置風險，不是損益預測。</p>${btn('issue','查看缺欄 ↗','risk','class="j-current"')}`;}
+function lensContext(kind){if(kind==='overview')return {kind,ctx:{...ctxDefault}};if(kind==='cycle'&&modal?.type==='cycle'){const c=records.find(r=>r.id===modal.id);return {kind,ctx:{...modal.ctx,scope:c.site,year:c.date.slice(0,4),month:+c.date.slice(5,7)},record:c.id};}if(kind==='operations'&&modal?.type==='op')return {kind,ctx:{...ctxDefault,scope:modal.id,year:modal.year},op:{kind:modal.kind,id:modal.id,year:modal.year}};const scope=state.ctx.scope;let node=null;if(kind==='allocation'&&siteIds(scope).length===1)node=selectedNode(scope,timelineNodes(scope,state.ctx));return {kind,ctx:clone(state.ctx),node:node?clone(node):null};}
+function lensHTML(m){const {ctx,kind}=m.context,op=m.context.op;const questions=op?[['op-survival','育成率怎麼算？'],['op-fcr','FCR 的依據是什麼？'],['op-missing','哪些營運資料還不完整？']]:[['change',ctx.month?'為什麼這個月變動？':'最近一個月為什麼變動？'],['recent',ctx.scope==='all'?'最近的水次表現如何？':scopeName(ctx.scope)+' 最近怎樣？'],['ratio','比例改變影響多少？'],['drag','哪幾水拖累表現？']];const answer=m.question?lensAnswer(m.context,m.question):null;return `<div class="j-eyebrow">CONTEXTUAL AI LENS / 本地示範</div><h3>沿著現在的數字，看清楚。</h3><div class="p-lens-context"><span>${scopeName(ctx.scope)}</span><span>${periodName(ctx)}</span><span>${ownerName(ctx.owner)}</span><span>${kind==='allocation'?'配置':op?'營運表現':ctx.basis==='net'?'支出後淨收入':'分配盈虧'}</span>${m.context.record?`<span>第 ${records.find(r=>r.id===m.context.record).n} 水</span>`:''}${m.context.node?`<span>${m.context.node.title}</span>`:''}</div><div class="p-lens-questions">${questions.map(([id,label])=>btn('lens-question',`<span>${label}</span><span>${m.question===id?'−':'↗'}</span>`,id)).join('')}</div>${answer?`<div class="p-lens-answer" id="p-lens-answer">${answer.text}</div>${answer.rows?.map(c=>btn('lens-evidence',`<span>${c.date} · 場 ${c.site} 第 ${c.n} 水</span><span>${signed(amount(c,ctx))} ↗</span>`,c.id,'class="p-issue"')).join('')||''}`:'<p class="j-caption">已帶入目前範圍，不需要重打場名與期間。</p>'}<p class="j-caption">此版本以已計算的虛構資料示範上下文解讀，尚未呼叫 Cloudflare AI；無資料支持的營運原因不推測。</p>`;}
+function lensAnswer(context,question){const ctx=context.ctx;let rows=contextRows(ctx);if(context.record)rows=records.filter(c=>c.id===context.record);if(question.startsWith('op-')){const op=context.op,v=operatingStats(opRows(op.kind,op.id,op.year));return {text:question==='op-survival'?(v.sN?`育成率 ${v.survival.toFixed(2)}%，由 ${money(v.shipped)} 隻出雞 ÷ ${money(v.chicks)} 隻入雞計算，納入 ${v.sN} 水。`:'本期間沒有足以計算育成率的補充輸入。'):question==='op-fcr'?(v.fN?`FCR ${v.fcr.toFixed(2)}，由飼料 ${money(v.feed)} kg ÷ 活重 ${money(v.weight)} kg 計算，納入 ${v.fN} 水。`:'本期間沒有足以計算 FCR 的飼料／活重資料。'):`${v.total} 水中，${v.complete} 水具備兩項指標的必要輸入；育成率缺 ${v.total-v.sN} 水，FCR 缺 ${v.total-v.fN} 水。財務結果仍可單獨查閱，缺營運資料不等於表現為零。`};}
+ if(question==='drag'){const negative=rows.filter(c=>amount(c,ctx)<0).sort((a,b)=>amount(a,ctx)-amount(b,ctx)).slice(0,3);return {text:negative.length?`目前範圍內，拖累較大的 ${negative.length} 水合計 ${signed(sum(negative,c=>amount(c,ctx)))} 元。以下按所選金額口徑排序；這是結果分解，不能單憑財務數字判定飼養原因。`:'目前範圍沒有虧損水；尚未對應水次的財務列未納入。',rows:negative};}
+ if(question==='recent'){const latest=(context.node?rows.filter(c=>c.date<=context.node.date):rows).slice(0,3);return {text:latest.length?`${context.node?'截至 '+context.node.date+'，':''}目前範圍最近 ${latest.length} 水合計 ${signed(sum(latest,c=>amount(c,ctx)))} 元；${latest.filter(c=>amount(c,ctx)>0).length} 水獲利、${latest.filter(c=>amount(c,ctx)<0).length} 水虧損。`:'此範圍尚無已確認結算水次。',rows:latest};}
+ if(question==='change'){const base=contextRows(ctx,true);if(!base.length)return {text:'此範圍尚無已確認結算，無法比較月份。'};const key=context.node?context.node.date.slice(0,7):ctx.month&&ctx.year!=='all'?`${ctx.year}-${String(ctx.month).padStart(2,'0')}`:base[0].date.slice(0,7);const date=new Date(key+'-01T00:00:00Z');date.setUTCMonth(date.getUTCMonth()-1);const prevKey=date.toISOString().slice(0,7),current=records.filter(c=>siteIds(ctx.scope).includes(c.site)&&c.date.startsWith(key)),previous=records.filter(c=>siteIds(ctx.scope).includes(c.site)&&c.date.startsWith(prevKey));const now=sum(current,c=>amount(c,ctx)),before=sum(previous,c=>amount(c,ctx));return {text:`${key} 合計 ${signed(now)} 元，來自 ${current.length} 水。${previous.length?`相較 ${prevKey} 的 ${signed(before)} 元，變動 ${signed(now-before)} 元。`:`${prevKey} 沒有結算紀錄，因此不推算比較增幅。`}較大的金額貢獻列於下方；仍需營運證據才能說明成因。`,rows:current.slice().sort((a,b)=>Math.abs(amount(b,ctx))-Math.abs(amount(a,ctx))).slice(0,3)};}
+ if(question==='ratio'){const ids=siteIds(ctx.scope),site=context.node?ids[0]:ids.find(id=>configurations[id].filter(v=>v.date<=cutoff(ctx)).length>1)||ids[0];const a=context.node?.allocation||configAt(site,ctx),versions=configurations[site],index=versions.findIndex(v=>v.id===(a.version||a.id)),prev=versions[index-1],sample=rows.find(c=>c.site===site)||records.find(c=>c.site===site&&c.date<=cutoff(ctx));if(!prev||!sample)return {text:`示範場 ${site} 在目前範圍沒有可比較的較早配置或已結算基底，不推估新比例的損益。`};const individual=ctx.owner==='pool'?1:a.split[+ctx.owner-1],oldIndividual=ctx.owner==='pool'?1:prev.split[+ctx.owner-1],old=sample.farm*prev.pool*oldIndividual,next=sample.farm*a.pool*individual;return {text:`以示範場 ${site} ${sample.date} 第 ${sample.n} 水的整場 ${signed(sample.farm)} 元作相同基底，Pool ${pct(prev.pool)} → ${pct(a.pool)}，${ownerName(ctx.owner)} 的費用前分配 ${signed(old)} → ${signed(next)}，差額 ${signed(next-old)} 元。這是比例情境比較，與收益頁所選的淨收入口徑分開；不預測未來，也不改寫歷史。`,rows:[sample]};}
+ return {text:'請選擇目前範圍的解讀方向。'};
 }
-function allocationHistory(id){const a=currentAllocations[id],rows=allCycles().filter(c=>c.site===id).sort((a,b)=>b.date.localeCompare(a.date));open(`<div class="j-eyebrow">OWNERSHIP HISTORY</div><h3>示範場 ${id} · 比例歷史</h3><div class="j-allocation-main"><span>目前共同占比<small class="j-caption" style="display:block">${a.effective}</small></span><strong>${pct(a.pool)}</strong></div>${shareRows(a)}<section class="j-detail-section"><h4>已結算的歷史比例</h4><div class="j-choice-list">${rows.map((c,i)=>`<button data-ratio-cycle="${i}"><span>${c.date} · 第 ${c.n} 水<small class="j-caption" style="display:block">三位業務各 1/3 · 各占整場 ${pct(snapshot(c).pool/3)}</small></span><span>${pct(snapshot(c).pool)} ↗</span></button>`).join('')}</div></section><p class="j-caption">目前配置與歷史快照分開保存；點選一水查看完整分配與帳務。</p>`);qa('[data-ratio-cycle]').forEach(b=>b.onclick=()=>cycle(rows[+b.dataset.ratioCycle],rows));}
-function sourceFields(){const groups=[
- ['總表',[['場名','投資 → 依場地，與各場財務明細對應。'],['各場總股份','獨立保留的來源比例。持分對象及與 Pool 的關係待確認，預覽不代填數值。'],['玩家','已確認為三位業務；介面統一顯示「業務1／2／3」。'],['玩家列的各場比例','與各場總股份分欄保留。對應 Sales Pool 的映射待確認，不互相覆蓋。'],['各業務 × 各場比例','投資 → 依場地／依業務，分別呈現 Pool 內分配與換算占整場比例。'],['合計盈虧','收益 → 選擇業務、年度與金額口徑；來源合計另外核對。']]],
- ['各場分頁',[['場名、場占比','場名對應投資標的；場占比原標籤獨立保存，與總表比例的對應待確認。'],['三位業務的分配比例、比例合計','投資頁與每水明細逐人顯示；Pool 內精確合計須為 100%。'],['日期（發錢日）','每筆明細列出發錢日，與結算日分開保存。'],['總盈虧','單水明細 → 完整財務欄位 → 整場總盈虧。'],['分配盈虧','單水明細及收益頁的「分配盈虧」口徑。'],['支出費用','單水明細列出分配後支出，與整場成本分開。'],['淨收入','單水明細及收益頁的「支出後淨收入」口徑。'],['三位業務各自金額','單水明細逐人列出淨收入分配；收益可切換個人。'],['合計、各欄累計','收益 → 完整期間帳務，列出各欄累計與三位業務合計；來源合計另作核對，不重複當交易。'],['備註','每筆明細保留來源備註；不從自由文字自動推定正式比例或水次。']]]
- ];open(`<div class="j-eyebrow">WORKBOOK FIELD GUIDE</div><h3>Excel 完整欄位</h3><p class="j-caption">「玩家」就是三位業務。以下為欄位與畫面的對照；公開預覽只使用虛構示例，尚未匯入附件。</p>${groups.map(([name,fields])=>`<section class="j-detail-section"><h4>${name}</h4><div class="j-field-map">${fields.map(([field,description])=>`<div><strong>${field}</strong><span>${description}</span></div>`).join('')}</div></section>`).join('')}<p class="j-caption">補充報表的營運資料可另行加入；缺少補充報表不妨礙主要財務欄位的查閱。</p>`);}
+function modalHTML(m){switch(m.type){case 'cycle':return cycleHTML(m);case 'ledger':return periodLedgerHTML(m.ctx);case 'fields':return sourceFieldsHTML();case 'issues':case 'issue':return issueHTML(m);case 'op':return opDetailHTML(m);case 'lens':return lensHTML(m);case 'risk':return riskHTML();case 'choices':return `<h3>${m.title}</h3><div class="j-choice-list">${m.options.map(([id,label])=>btn('choice',`<span>${label}</span><span>${id===m.current?'✓':''}</span>`,id,`aria-pressed="${id===m.current}"`)).join('')}</div>`;case 'ongoing':return `<h3>進行中 18 水</h3><p class="j-caption">未結算，不估列盈虧。以下水次皆為虛構。</p>${sites.map(s=>{const n=Math.max(...records.filter(c=>c.site===s.id&&c.date.startsWith('2026')).map(c=>c.n))+1;return `<div class="j-source-row"><span>${s.name} · 2026 第 ${n} 水</span><span class="j-tag">進行中</span></div>`;}).join('')}`;case 'sample':return `<h3>真實規模，全虛構資料</h3>${fieldsHTML([['場地 / 代養主','18 / 6'],['歷史範圍','2023–2026'],['已結算水次',records.length],['進行中水次','18'],['分開的發錢日 / 結算日',records.length+' 筆'],['跨年度發錢',records.filter(c=>c.date.slice(0,4)!==c.payoutDate.slice(0,4)).length+' 筆'],['比例版本',sum(sites,s=>configurations[s.id].length)],['異常情境','5 類']])}<p class="j-caption">包括中途比例調整、不等額業務分配、營運缺欄及過舊、未對應水次與匯入衝突。所有實體、金額與記錄獨立虛構，未匿名化或搬移真實附件。</p>`;case 'edit':{const c=records.find(r=>r.id===m.id);return `<h3>更正示範金額</h3><p class="j-caption">示範場 ${c.site} · ${c.date} 第 ${c.n} 水</p><div class="j-field"><label for="p-edit-farm">整場最終盈虧 / NT$</label><input id="p-edit-farm" type="number" step="1" value="${c.farm}"></div><p class="j-caption">只影響此預覽；重新整理即還原。歷史比例快照保持不變。</p><div class="j-actions">${btn('edit-preview','檢視變更',c.id,'class="j-action"')}</div>`;}case 'edit-confirm':{const c=records.find(r=>r.id===m.id);return `<h3>確認這一次變更</h3>${fieldsHTML([['整場盈虧',signed(c.farm)+' → '+signed(m.value)],['衍生 Pool 盈虧',signed(pool(c))+' → '+signed(Math.round(m.value*c.snapshot.pool))],['淨收入',signed(net(c))+' → '+signed(Math.round(m.value*c.snapshot.pool)-c.expense)]])}<div class="j-actions">${btn('edit-apply','確認套用',c.id,'class="j-action"')}</div>`;}}return '';}
+function choices(kind,title,options,current){showModal({type:'choices',kind,title,options,current});}
+function cycleStep(step){if(modal?.type!=='cycle')return;const id=modal.items[modal.items.indexOf(modal.id)+step];if(!id)return;const c=records.find(r=>r.id===id);modal.id=id;modal.scroll=0;modal.tabScroll={};modal.ctx={...modal.ctx,scope:c.site};state.selected[c.site]=id;state.timeline[timelineKey(c.site)]=id;renderModal();persist();}
+function renderLine(){const rows=contextRows(state.ctx);q('#p-line').innerHTML=`<header class="j-line-top"><span>金雞投資查詢</span><span>示範</span></header><div class="j-line-chat"><div class="j-user-bubble">@金雞 ${scopeName(state.ctx.scope)} ${periodName(state.ctx)}</div><div class="j-line-result"><div class="j-eyebrow">${ownerName(state.ctx.owner)} / ${state.ctx.basis==='net'?'淨收入':'分配盈虧'}</div><h3>目前查詢範圍</h3><div class="j-line-amount">${signed(sum(rows,c=>amount(c,state.ctx)))}</div><p>${rows.length} 水已結算 · ${scopeName(state.ctx.scope)}<br>保留相同場地、年度與業務，前往 PWA 查看。</p></div><div class="j-line-quick">${btn('line-pwa','開啟相同組合 ↗')}${btn('lens','解讀目前查詢','returns')}</div></div><div class="j-line-input">本地互動示範，不傳送 LINE 訊息。</div>`;}
+let suppressClickUntil=0;
+root.addEventListener('click',e=>{
+ const button=e.target.closest('button[data-action]');if(!button||button.disabled)return;if(Date.now()<suppressClickUntil){e.preventDefault();return;}
+ const action=button.dataset.action,value=button.dataset.value;
+ switch(action){
+ case 'page':if(state.page!==value)transition(()=>state.page=value);break;
+ case 'portfolio':goPortfolio();break;
+ case 'view':if(state.view!==value)transition(()=>state.view=value);break;
+ case 'scope':if(state.ctx.scope!==value)changeContext({scope:value});break;
+ case 'year':choices('year','選擇查閱年度',[['2026','2026 年'],['2025','2025 年'],['2024','2024 年'],['2023','2023 年'],['all','全部年度']],state.ctx.year);break;
+ case 'owner':choices('owner','查看誰的分配',[['pool','Sales Pool · 三位業務'],['1','業務1'],['2','業務2'],['3','業務3']],state.ctx.owner);break;
+ case 'year-direct':changeContext({year:value,month:null});break;
+ case 'month':changeContext({month:state.ctx.month===+value?null:+value});break;
+ case 'month-clear':changeContext({month:null});break;
+ case 'basis':changeContext({basis:value});break;
+ case 'choice':{const kind=modal.kind;closeModal();if(kind==='year')changeContext({year:value,month:null});if(kind==='owner')changeContext({owner:value});if(kind==='op-year')transition(()=>state.opYear=value);break;}
+ case 'cycle':openCycle(value);break;
+ case 'cycle-step':cycleStep(+value);break;
+ case 'cycle-tab':{modal.tabScroll[modal.tab]=q('#j-sheet-content').scrollTop;modal.tab=value;modal.scroll=modal.tabScroll[value]||0;renderModal();break;}
+ case 'cycle-portfolio':{const c=records.find(r=>r.id===value),ctx=clone(modal.ctx);closeModal();transition(()=>{state.page='portfolio';state.view='allocation';Object.assign(state.ctx,ctx,{scope:c.site});state.timeline[timelineKey(c.site)]=c.id;});break;}
+ case 'timeline-step':moveTimeline(+q('#p-ratio-timeline').value+(+value));break;
+ case 'period-ledger':showModal({type:'ledger',ctx:clone(state.ctx)});break;
+ case 'issues':showModal({type:'issues'});break;
+ case 'context-issues':showModal({type:'issues',scope:state.ctx.scope});break;
+ case 'issue':showModal({type:'issue',id:value});break;
+ case 'issue-site':closeModal();goPortfolio({scope:value});break;
+ case 'fields':showModal({type:'fields'});break;
+ case 'sample':showModal({type:'sample'});break;
+ case 'risk':showModal({type:'risk'});break;
+ case 'ongoing':showModal({type:'ongoing'});break;
+ case 'op-year':choices('op-year','營運資料年度',[['2026','2026 年'],['2025','2025 年'],['2024','2024 年'],['2023','2023 年'],['all','全部年度']],state.opYear);break;
+ case 'op-view':transition(()=>state.opView=value);break;
+ case 'op-detail':{const [kind,id]=value.split(':');showModal({type:'op',kind,id,year:state.opYear});break;}
+ case 'op-portfolio':{const year=modal.year;closeModal();transition(()=>{state.page='portfolio';state.view='returns';Object.assign(state.ctx,{scope:value,year,month:null});});break;}
+ case 'lens':showModal({type:'lens',context:lensContext(value),question:null});break;
+ case 'lens-question':modal.question=value;modal.scroll=0;renderModal();break;
+ case 'lens-evidence':{const rows=lensAnswer(modal.context,modal.question).rows||[];openCycle(value,rows.map(c=>c.id));break;}
+ case 'line-pwa':transition(()=>{state.design.surface='pwa';state.page='portfolio';});break;
+ case 'edit':showModal({type:'edit',id:value});break;
+ case 'edit-preview':{const text=q('#p-edit-farm').value.trim(),number=Number(text);if(!text||!Number.isSafeInteger(number)){q('#j-sheet-status').textContent='請輸入有效的整數金額。';return;}const c=records.find(r=>r.id===value);if(c.farm===number){q('#j-sheet-status').textContent='沒有變更。';return;}showModal({type:'edit-confirm',id:value,value:number});break;}
+ case 'edit-apply':{const c=records.find(r=>r.id===value),old=c.farm;c.farm=modal.value;audit=`示範場 ${c.site} ${c.date}：整場 ${signed(old)} → ${signed(c.farm)}，衍生金額已重算。`;closeModal();render();q('#j-status').textContent='已更新虛構示範金額，重新整理即還原。';break;}
+ }
+});
+root.addEventListener('input',e=>{if(e.target.id==='p-ratio-timeline')moveTimeline(+e.target.value);});
+q('#j-close').onclick=closeModal;q('#j-sheet-back').onclick=modalBack;
+q('#j-sheet').addEventListener('cancel',e=>{e.preventDefault();closeModal();});
+q('#j-sheet').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const nodes=[...q('#j-sheet').querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].filter(n=>n.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus({preventScroll:true});}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus({preventScroll:true});}});
+let backdrop=false;const outside=e=>{const r=q('#j-sheet').getBoundingClientRect();return e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom;};
+q('#j-sheet').addEventListener('pointerdown',e=>backdrop=e.target===q('#j-sheet')&&outside(e));q('#j-sheet').addEventListener('pointerup',e=>{if(backdrop&&e.target===q('#j-sheet')&&outside(e))closeModal();backdrop=false;});
+let sheetDrag=null;
+q('#j-sheet-handle').addEventListener('pointerdown',e=>{if(!e.isPrimary||e.button!==0||e.target.closest('button'))return;sheetDrag={id:e.pointerId,y:e.clientY};q('#j-sheet-handle').setPointerCapture(e.pointerId);});
+q('#j-sheet-handle').addEventListener('pointermove',e=>{if(sheetDrag?.id===e.pointerId)q('#j-sheet').style.transform=`translateY(${Math.max(0,Math.min(160,e.clientY-sheetDrag.y))}px)`;});
+q('#j-sheet-handle').addEventListener('pointerup',e=>{if(sheetDrag?.id!==e.pointerId)return;const dy=e.clientY-sheetDrag.y;sheetDrag=null;q('#j-sheet').style.transform='';if(dy>64)closeModal();});
+q('#j-sheet-handle').addEventListener('pointercancel',()=>{sheetDrag=null;q('#j-sheet').style.transform='';});
+let horizontal=null,hold=null;
+function cancelHold(){if(hold)clearTimeout(hold.timer);hold=null;}
+root.addEventListener('pointerdown',e=>{
+ if(!e.isPrimary||e.button!==0)return;
+ if(e.target.id==='p-back-edge')horizontal={kind:'back',id:e.pointerId,x:e.clientX,y:e.clientY};
+ else if(modal?.type==='cycle'&&e.target.closest('#p-cycle-body')&&!e.target.closest('button,input'))horizontal={kind:'cycle',id:e.pointerId,x:e.clientX,y:e.clientY};
+ const target=e.target.closest('[data-lens]');if(!target)return;cancelHold();hold={id:e.pointerId,x:e.clientX,y:e.clientY,timer:setTimeout(()=>{suppressClickUntil=Date.now()+600;const context=lensContext(target.dataset.lens);cancelHold();showModal({type:'lens',context,question:null});},550)};
+});
+root.addEventListener('pointermove',e=>{if(hold?.id===e.pointerId&&(Math.abs(e.clientX-hold.x)>8||Math.abs(e.clientY-hold.y)>8))cancelHold();if(horizontal?.id===e.pointerId&&Math.abs(e.clientY-horizontal.y)>30)horizontal=null;});
+root.addEventListener('pointerup',e=>{cancelHold();if(horizontal?.id===e.pointerId){const dx=e.clientX-horizontal.x,dy=e.clientY-horizontal.y,kind=horizontal.kind;horizontal=null;if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.7){if(kind==='back'&&dx>0)goBack();if(kind==='cycle')cycleStep(dx<0?1:-1);}}});
+root.addEventListener('pointercancel',()=>{cancelHold();horizontal=null;});
+q('.j-main').addEventListener('scroll',()=>{if(!restoring)state.scroll[scrollKey()]=q('.j-main').scrollTop;},{passive:true});
+root.addEventListener('scroll',e=>{if(e.target.matches?.('.p-rail'))state.rail=e.target.scrollLeft;},true);
+window.addEventListener('pagehide',persist);document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});
+['gesturestart','gesturechange'].forEach(type=>document.addEventListener(type,e=>e.preventDefault(),{passive:false}));document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+['surface','appearance','accent'].forEach(k=>q('#j-preview-'+k).onchange=e=>{capture();state.design[k]=e.target.value;render();persist();});
+restore();render();
 
-function explanation(){open('<div class="j-eyebrow">INTERPRETATION / 示範解讀</div><h3>先看結果，再看證據。</h3><div class="j-answer" id="j-answer"></div><div class="j-inline-options"><button data-question="overview">解讀整體績效</button><button data-question="why">最差一水怎麼算？</button><button data-question="roi">可以看 ROI 嗎？</button></div><div id="j-query-form"><input class="j-query" id="j-question" aria-label="詢問目前結果" placeholder="試問：最差一水怎麼算？" autocomplete="off"><div class="j-actions"><button class="j-action" id="j-query-submit" type="button">解讀</button></div></div><div class="j-caption">此提案使用本地示範回覆，尚未呼叫 Cloudflare AI。</div>');answer('overview');q('#j-query-submit').onclick=()=>{const s=q('#j-question').value;answer(/ROI|報酬率|本金/i.test(s)?'roi':/最差|虧|怎麼算/.test(s)?'why':/績效|賺|整體/.test(s)?'overview':'unknown');;};q('#j-question').onkeydown=e=>{if(e.key==='Enter')q('#j-query-submit').click();};qa('[data-question]').forEach(b=>b.onclick=()=>answer(b.dataset.question));}
-function answer(kind){const a=filtered(),worst=a.reduce((x,y)=>x.farm<=y.farm?x:y);q('#j-answer').textContent=kind==='roi'?'目前為無本金的盈虧參與模式，沒有可用的 ROI 分母。可以查看累積盈虧、每水結果和目前靜態曝險。':kind==='why'?`本期間最差單水是示範場 ${worst.site} 第 ${worst.n} 水：整場 ${signed(worst.farm)} 元 × 該水 Pool ${worst.pool*100}% = Pool ${signed(pool(worst))} 元。這能說明盈虧分配；目前資料不足以判定營運虧損的原因。`:kind==='unknown'?'這個原型尚未連接 AI。可體驗上方三個示範問題，或直接查看已計算的明細。':`${periodLabel()} Pool 累積 ${signed(allSum())} 元，已結算 ${a.length} 水，其中 ${a.filter(c=>c.farm>0).length} 水獲利。進行中 3 水沒有計入正式盈虧，也沒有加入獲利水比例的分母。`;}
-function edit(){const old=cycles[7].farm;open(`<div class="j-eyebrow">EDIT DRAFT / 示範場 C 第 3 水</div><h3>調整正式值前，先看影響。</h3><div id="j-edit-form"><div class="j-form"><div class="j-field"><label for="j-farm-input">整場最終盈虧 / NT$</label><input id="j-farm-input" type="number" step="1" required value="${old}"></div><div><span class="j-label">該水固定 Pool 20%</span><div class="j-number" id="j-draft-pool">${signed(old*.2)}</div><span class="j-caption">衍生值 · 草稿預覽</span></div></div><div class="j-actions"><button type="button" id="j-cancel-edit">取消</button><button class="j-action" id="j-preview-changes" type="button">檢視變更</button></div></div>`);q('#j-cancel-edit').onclick=close;q('#j-farm-input').oninput=e=>{const v=Number(e.target.value);q('#j-draft-pool').textContent=Number.isFinite(v)?signed(v*.2):'—';};q('#j-preview-changes').onclick=()=>{const input=q('#j-farm-input').value.trim(),val=Number(input);if(!input||!Number.isSafeInteger(val)){setStatus('請輸入有效的整數金額。');return;}if(val===old){setStatus('沒有變更，尚未寫入。');return;}preview(old,val);};q('#j-farm-input').onkeydown=e=>{if(e.key==='Enter')q('#j-preview-changes').click();};}
-function preview(old,val){open(`<div class="j-eyebrow">REVIEW CHANGES / 1 FIELD</div><h3>確認這一次變更。</h3><table class="j-table"><thead><tr><th>欄位</th><th>舊值</th><th>新值</th></tr></thead><tbody><tr><td>整場盈虧</td><td>${signed(old)}</td><td>${signed(val)}</td></tr><tr><td>衍生 Pool 盈虧</td><td>${signed(old*.2)}</td><td>${signed(val*.2)}</td></tr></tbody></table><p class="j-caption">示範場 C · 第 3 水<br>確認後更新這一水及受影響的累積盈虧。比例快照不變。</p><div class="j-actions"><button id="j-return-edit">返回編輯</button><button class="j-action" id="j-apply">確認套用</button></div>`);q('#j-return-edit').onclick=edit;q('#j-apply').onclick=()=>{cycles[7].farm=val;state.revision++;render();close();q('#j-audit').textContent=`業務1 · 示範場 C 第 3 水整場盈虧 ${signed(old)} → ${signed(val)}；衍生結果已重算。`;setStatus('已套用到此示範畫面，未寫入任何正式資料。');};}
-function importDiff(){open('<div class="j-eyebrow">AUTHORITATIVE RECONCILIATION</div><h3>權威來源與目前設定不同。</h3><table class="j-table"><thead><tr><th>示範場 A</th><th>目前</th><th>權威來源</th></tr></thead><tbody><tr><td>Pool 比例</td><td>20%</td><td>25%</td></tr></tbody></table><label style="display:flex;align-items:center;gap:12px;min-height:52px;margin-top:14px"><input id="j-keep" type="checkbox" style="width:22px;height:22px;accent-color:var(--j-accent)">保留目前設定 20%</label><p id="j-import-choice">將採用權威來源 25%，從明確指定的新水次生效。</p><div class="j-caption">匯入套用尚未實作。本畫面示範「不勾選＝採權威值」的差異處理，不改寫歷史比例。</div>');q('#j-keep').onchange=e=>q('#j-import-choice').textContent=e.target.checked?'將保留目前 20%，記錄未採用差異。':'將採用權威來源 25%，從明確指定的新水次生效。';}
-function line(which=state.lineView){state.lineView=which;if(which==='risk'||which==='performance')state.lineContext=which;const a=filtered();q('#j-line-result').innerHTML=which==='risk'?'<div class="j-eyebrow">目前配置 / 靜態風險</div><h3>整場全損風險</h3><div class="j-line-amount">6,160,000</div><div class="j-caption">NT$ · 非極端 924,000</div><p>業務1／2／3<br>各全損曝險 476,666.67<br>各非極端曝險 71,500</p><div class="j-warning">示範場 C 資料待補，未納入。</div>':which==='explain'&&state.lineContext==='risk'?'<div class="j-eyebrow">目前配置 / 示範解讀</div><h3>這是配置曝險，不是預測。</h3><p>2 個有效場納入整場全損風險 6,160,000 元。個人依目前 Pool 比例與內部分配承擔曝險。</p><p>示範場 C 缺少約定標準飼養數，尚未納入；總額不是完整覆蓋。</p>':which==='explain'?`<div class="j-eyebrow">示範解讀</div><h3>結果與限制，一起看。</h3><p>累積 Pool ${signed(allSum())} 元。</p><p>進行中 3 水未納入正式盈虧。此結果可用於了解已結算表現，不能直接解讀為 ROI。</p>`:`<div class="j-eyebrow">${periodLabel()} / 整體績效</div><h3>Sales Pool 累積盈虧</h3><div class="j-line-amount">${signed(allSum())}</div><div class="j-caption">NT$ · ${a.length} 水已結算</div><div style="border-top:1px solid var(--j-rule);margin-top:20px;padding-top:14px">獲利水 ${+(a.filter(c=>c.farm>0).length/a.length*100).toFixed(1)}%（${a.filter(c=>c.farm>0).length}/${a.length}）<br>進行中 3 水</div><div class="j-caption" style="margin-top:14px">虛構示範 · 2026.09.22</div>`;}
-function designRender(){['surface','appearance','accent'].forEach(k=>q('#j-preview-'+k).value=design[k]);root.style.colorScheme=design.appearance==='auto'?'light dark':design.appearance;document.documentElement.style.colorScheme=root.style.colorScheme;q('.j-app').hidden=design.surface==='line';q('.j-line').hidden=design.surface!=='line';root.style.setProperty('--j-accent',design.accent==='olive'?'light-dark(#626b35,#bcc784)':'light-dark(#b94228,#e68466)');if(design.surface==='line')line();else render();}
-qa('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));q('#j-period').onchange=e=>{state.period=e.target.value;state.cursor=filtered().length-1;close();render();persist();setStatus(`已更新為${periodLabel()}`);};q('#j-scrub').oninput=e=>{state.cursor=+e.target.value;chart();};q('#j-scrub').onchange=persist;q('#j-open-cycle').onclick=()=>cycle(filtered()[state.cursor]);q('#j-best').onclick=()=>cycle(filtered().reduce((x,y)=>x.farm>=y.farm?x:y));q('#j-worst').onclick=()=>cycle(filtered().reduce((x,y)=>x.farm<=y.farm?x:y));q('#j-close').onclick=close;q('#j-risk-open').onclick=()=>page('risk');q('#j-explain').onclick=explanation;q('#j-edit').onclick=edit;q('#j-import').onclick=importDiff;['j-missing','j-risk-missing','j-data-missing'].forEach(id=>q('#'+id).onclick=missing);qa('[data-site]').forEach(b=>b.onclick=()=>site(b.dataset.site));qa('[data-risk-site]').forEach(b=>b.onclick=()=>riskSite(b.dataset.riskSite));q('#j-ongoing').onclick=()=>open('<div class="j-eyebrow">IN PROGRESS</div><h3>進行中 3 水</h3><div class="j-site-list">'+['A','B','C'].map(s=>`<div class="j-source-row"><span>示範場 ${s} · 下一水</span><span class="j-tag">進行中</span></div>`).join('')+'</div><p class="j-caption">尚未結算；不計入正式盈虧、不預估損益。</p>');
-qa('[data-line]').forEach(b=>b.onclick=()=>{if(b.dataset.line==='pwa'){design.surface='pwa';designRender();page(state.lineContext==='risk'?'risk':'overview');}else line(b.dataset.line);persist();});
-let drag=null;const svg=q('#j-chart');const scrub=e=>{const r=svg.getBoundingClientRect(),a=filtered(),start=Date.parse(state.period==='h2'?'2026-07-01':'2026-01-01'),end=Date.parse(state.period==='h1'?'2026-06-30':'2026-09-22'),time=start+Math.max(0,Math.min(1,(e.clientX-r.left-38)/(r.width-50)))*(end-start);state.cursor=a.reduce((best,c,i)=>Math.abs(Date.parse(c.date)-time)<Math.abs(Date.parse(a[best].date)-time)?i:best,0);chart();};svg.addEventListener('pointerdown',e=>{if(!e.isPrimary)return;drag={x:e.clientX,y:e.clientY,id:e.pointerId};});svg.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>8){drag=null;return;}if(Math.abs(dx)>8){svg.setPointerCapture(e.pointerId);scrub(e);}});svg.addEventListener('pointerup',e=>{if(drag){scrub(e);persist();}drag=null;});svg.addEventListener('pointercancel',()=>drag=null);
-const sheet=q('#j-sheet'),handle=q('#j-sheet-handle');let sheetDrag=null;
-sheet.addEventListener('cancel',e=>{e.preventDefault();close();});
-sheet.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const controls=Array.from(sheet.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')).filter(el=>el.getClientRects().length);const first=controls[0],last=controls[controls.length-1];if(!first)return;if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});
-let backdropDown=false;const outside=e=>{const r=sheet.getBoundingClientRect();return e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom;};
-sheet.addEventListener('pointerdown',e=>{backdropDown=e.target===sheet&&outside(e);});
-sheet.addEventListener('pointerup',e=>{if(backdropDown&&e.target===sheet&&outside(e))close();backdropDown=false;});
-handle.addEventListener('pointerdown',e=>{if(!e.isPrimary||e.button!==0||e.target.closest('button'))return;sheetDrag={y:e.clientY,id:e.pointerId};handle.setPointerCapture(e.pointerId);});
-handle.addEventListener('pointermove',e=>{if(!sheetDrag||e.pointerId!==sheetDrag.id)return;const dy=Math.max(0,e.clientY-sheetDrag.y);sheet.style.transform=`translateY(${Math.min(dy,180)}px)`;});
-handle.addEventListener('pointerup',e=>{if(!sheetDrag||e.pointerId!==sheetDrag.id)return;const dy=e.clientY-sheetDrag.y;sheetDrag=null;sheet.style.transform='';if(handle.hasPointerCapture(e.pointerId))handle.releasePointerCapture(e.pointerId);if(dy>64)close();});
-handle.addEventListener('pointercancel',()=>{sheetDrag=null;sheet.style.transform='';});
-
-q('#j-history-scope').onclick=()=>choose('查閱範圍',[['all','全部場地'],['A','示範場 A'],['B','示範場 B'],['C','示範場 C'],['alpha','示範代養主甲旗下場地'],['beta','示範代養主乙旗下場地']],state.historyScope,id=>{state.historyScope=id;state.historyMonth=null;});
-q('#j-history-owner').onclick=()=>choose('查看誰的分配',[['pool','Sales Pool'],['1','業務1'],['2','業務2'],['3','業務3']],state.historyOwner,id=>state.historyOwner=id);
-qa('[data-history-basis]').forEach(b=>b.onclick=()=>{state.historyBasis=b.dataset.historyBasis;renderHistory();persist();});
-qa('[data-investment-view]').forEach(b=>b.onclick=()=>{state.investmentView=b.dataset.investmentView;renderInvestment();persist();});
-q('#j-period-ledger').onclick=periodLedger;
-q('#j-data-fields').onclick=sourceFields;q('#j-investment-fields').onclick=sourceFields;
-q('#j-history-clear').onclick=()=>{state.historyMonth=null;renderHistory();};
-qa('[data-rating-view]').forEach(b=>b.onclick=()=>{state.ratingView=b.dataset.ratingView;renderRatings();persist();});
-['gesturestart','gesturechange'].forEach(type=>document.addEventListener(type,e=>e.preventDefault(),{passive:false}));
-document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
-
-try{restore(JSON.parse(localStorage.getItem('jinji-preview-ui-v2')));}catch{}
-qa('[data-view]').forEach(e=>e.hidden=e.dataset.view!==state.page);qa('.j-nav button').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.page===(state.page==='risk'?'overview':state.page))));designRender();new ResizeObserver(()=>{if(!q('.j-app').hidden)chart();}).observe(q('.j-app'));
-['surface','appearance','accent'].forEach(k=>q('#j-preview-'+k).onchange=e=>{close();design[k]=e.target.value;designRender();persist();});
 })();
 </script>
-
 </body>
 </html>
