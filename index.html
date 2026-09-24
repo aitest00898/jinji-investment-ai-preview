@@ -459,7 +459,7 @@ sites.forEach((s,i)=>{
  const versions=[{id:`${s.id}-v1`,date:'2023-01-01',fromYear:2023,fromN:1,pool:initial,split:equalSplit()}];
  if(i>=3)versions.push({id:`${s.id}-v2`,date:'2025-01-01',fromYear:2025,fromN:1,pool:initial+.03,split:s.id==='D'?[.35,.25,.2]:i%2?[.4,.35,.25]:equalSplit()});
  if(s.id==='B')versions.push({id:'B-v2',date:'2026-08-01',fromYear:2026,fromN:3,pool:.25,split:equalSplit()});
- else if(i>=3&&i%3===0)versions.push({id:`${s.id}-v3`,date:'2026-07-01',fromYear:2026,fromN:3,pool:initial+.06,split:[.5,.3,.2]});
+ else if(i>=3&&i%3===0)versions.push({id:`${s.id}-v3`,date:'2026-07-01',fromYear:2026,fromN:3,pool:initial+.06,split:s.id==='D'?[.45,.25,.15]:[.5,.3,.2]});
  configurations[s.id]=versions;
 });
 const versionFor=(site,year,n)=>configurations[site].filter(v=>v.fromYear<year||(v.fromYear===year&&v.fromN<=n)).at(-1);
