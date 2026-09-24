@@ -7,9 +7,9 @@ const c={scope:'all',year:'2026',owner:'pool',month:null,basis:'pool'};
 assert.equal(m.contextRows(c).length,53);
 assert.equal(m.sum(m.contextRows({...c,scope:'B'}),m.pool),72000);
 assert.equal(m.sum(m.contextRows({...c,scope:'B'}),r=>m.amount(r,{...c,owner:'2'})),24000);
-for(const r of m.records){assert.ok(r.date<=r.payoutDate);assert.ok(r.payoutDate<='2026-09-22');assert.ok(Math.abs(m.sum(r.snapshot.split)-1)<1e-12);assert.equal(m.net(r),m.pool(r)-r.expense);assert.ok(Math.abs(m.sum(['1','2','3'],owner=>m.amount(r,{...c,owner,basis:'net'}))-m.net(r))<1e-7);assert.ok(Object.isFrozen(r.snapshot));}
+for(const r of m.records){assert.ok(r.date<=r.payoutDate);assert.ok(r.payoutDate<='2026-09-22');const splitSum=m.sum(r.snapshot.split);assert.ok(splitSum>=0&&splitSum<=1+1e-12);assert.equal(m.net(r),m.pool(r)-r.expense);assert.ok(Math.abs(m.sum(['1','2','3'],owner=>m.amount(r,{...c,owner,basis:'net'}))-m.net(r)*splitSum)<1e-7);assert.ok(Object.isFrozen(r.snapshot));}
 assert.equal(m.configAt('B',c).pool,.25);assert.equal(m.configAt('B',{...c,year:'2025'}).pool,.2);assert.ok(m.contextRows({...c,scope:'B'}).every(r=>r.snapshot.pool===.2));
-assert.ok(m.timelineNodes('D',c).some(n=>n.kind==='配置生效'));
+assert.ok(m.timelineNodes('D',c).some(n=>n.kind==='配置生效'));assert.ok(m.sum(m.configAt('D',c).split)<1);
 const previous=m.contextRows({...c,scope:'D',year:'2024'})[0];const original=previous.snapshot.pool;m.configurations.D.at(-1).pool=.9;assert.equal(previous.snapshot.pool,original);
 const rStats=m.operatingStats(m.operations.filter(o=>o.site==='R'&&o.date.startsWith('2026')));assert.equal(rStats.survival,null);assert.equal(rStats.fcr,null);assert.equal(rStats.total,3);
 const unequal=m.operatingStats([{chicks:100,shipped:90,weight:100,feed:200,date:'2026-01-01'},{chicks:300,shipped:240,weight:300,feed:900,date:'2026-02-01'},{chicks:null,shipped:null,weight:null,feed:null,date:'2026-03-01'}]);assert.equal(unequal.survival,82.5);assert.equal(unequal.fcr,2.75);assert.equal(unequal.complete,2);
