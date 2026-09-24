@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="build-sha" content="__BUILD_SHA__">
-<meta name="description" content="金雞 Investment AI 的 PWA 與 LINE 互動設計提案，全部使用虛構資料。">
+<meta name="description" content="金雞投資 AI 的網頁版與 LINE 互動設計提案，全部使用虛構資料。">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <link rel="icon" href="data:,">
@@ -434,7 +434,7 @@ html,body,#jinji-canvas{touch-action:pan-x pan-y}
 
 </style>
 <div id="jinji-canvas" aria-label="金雞觸控投資工具">
- <details class="j-preview-settings"><summary>JINJI PREVIEW <span>全虛構資料 · 預覽設定 ↗</span></summary><aside class="j-preview-controls" aria-label="設計預覽控制"><label>入口<select id="j-preview-surface" aria-label="預覽入口"><option value="pwa">PWA</option><option value="line">LINE 查詢示範</option></select></label><label>外觀<select id="j-preview-appearance" aria-label="預覽外觀"><option value="auto">跟隨系統</option><option value="light">紙白</option><option value="dark">墨黑</option></select></label><label>點綴<select id="j-preview-accent" aria-label="預覽點綴色"><option value="cinnabar">朱砂</option><option value="olive">橄欖</option></select></label><span class="j-preview-note">18 場 · 6 位代養主 · 2023–2026 · AI 為本地示範</span></aside></details>
+ <details class="j-preview-settings"><summary>金雞預覽 <span>全虛構資料 · 預覽設定 ↗</span></summary><aside class="j-preview-controls" aria-label="設計預覽控制"><label>入口<select id="j-preview-surface" aria-label="預覽入口"><option value="pwa">網頁版</option><option value="line">LINE 查詢示範</option></select></label><label>外觀<select id="j-preview-appearance" aria-label="預覽外觀"><option value="auto">跟隨系統</option><option value="light">紙白</option><option value="dark">墨黑</option></select></label><label>點綴<select id="j-preview-accent" aria-label="預覽點綴色"><option value="cinnabar">朱砂</option><option value="olive">橄欖</option></select></label><span class="j-preview-note">18 場 · 6 位代養主 · 2023–2026 · AI 為本地示範</span></aside></details>
  <div class="j-app">
   <header class="j-header"><div class="j-brand"><div class="j-seal" aria-hidden="true">金<br>雞</div><div><b>JINJI</b><div class="j-eyebrow">Investment intelligence</div></div></div><nav class="j-nav" aria-label="主要空間"><button data-action="page" data-value="overview" aria-pressed="true"><small>01</small>總覽</button><button data-action="page" data-value="portfolio" aria-pressed="false"><small>02</small>收益</button><button data-action="page" data-value="operations" aria-pressed="false"><small>03</small>營運表現</button></nav><button class="p-data-status" id="j-data-status" data-action="issues" aria-label="資料狀態，5 項待處理"><i></i>5 項待處理</button></header>
   <div id="p-back-edge" class="p-back-edge" aria-hidden="true"></div><main class="j-main" id="j-main"><section data-view="overview" id="p-overview"></section><section data-view="portfolio" id="p-portfolio" hidden></section><section data-view="operations" id="p-operations" hidden></section></main>
